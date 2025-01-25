@@ -10,7 +10,6 @@ import random
 @st.cache_data
 def load_and_process_data():
     # Lee tus archivos .dta desde la carpeta 'data'
-    # Ajusta las rutas según tu repositorio
     file_path_person = 'data/ESRU-EMOVI 2017 Entrevistado.dta'
     file_path_hogar  = 'data/ESRU-EMOVI 2017 Hogar.dta'
 
@@ -98,7 +97,7 @@ def load_and_process_data():
     # Sexo
     df['sex'] = df['p06h'].map({1: 'Hombre', 2: 'Mujer'})
 
-    # EJEMPLO de "nivel de estudios" (ajusta a tu variable real)
+    # Nivel de estudios
     def assign_education(val):
         # E.g.: 1=Primaria, 2=Secundaria, 3=Prepa, 4=Uni, 5=Posg
         if pd.isna(val):
@@ -119,7 +118,7 @@ def load_and_process_data():
     if 'p07' in df.columns:
         df['education'] = df['p07'].apply(assign_education)
     else:
-        # Si no existe p07, crea un dummy random para demo
+        # Si no existe p07, crea una dummy random para demo
         df['education'] = np.random.choice(
             ['Primaria','Secundaria','Preparatoria','Universidad','Posgrado','Otro','NA'],
             size=len(df)
@@ -177,7 +176,7 @@ def plot_mobility(df_filter, df_base):
     q5_dist_filter = q5_dist_filter.sort_index()
 
     # Gráfica
-    fig, ax = plt.subplots(1, 2, figsize=(14, 8), sharey=True)
+    fig, ax = plt.subplots(1, 2, figsize=(16, 10), sharey=True)
 
     # ---- Q1: Base vs Filtro
     ax[0].bar(q1_dist_base.index.astype(str),
@@ -187,7 +186,7 @@ def plot_mobility(df_filter, df_base):
               q1_dist_filter.values,
               alpha=1.0, color='skyblue', label='Filtro')
 
-    ax[0].set_title("Q1 (Origen)", fontsize=11)
+    ax[0].set_title("Q1 (Origen)", fontsize=12)
     ax[0].set_xlabel("Quintil actual")
     ax[0].set_ylabel("% de personas")
     ax[0].legend()
@@ -205,7 +204,7 @@ def plot_mobility(df_filter, df_base):
             s=label,
             ha='center',
             color=color,
-            fontsize=9
+            fontsize=10
         )
 
     # ---- Q5: Base vs Filtro
@@ -216,7 +215,7 @@ def plot_mobility(df_filter, df_base):
               q5_dist_filter.values,
               alpha=1.0, color='salmon', label='Filtro')
 
-    ax[1].set_title("Q5 (Origen)", fontsize=11)
+    ax[1].set_title("Q5 (Origen)", fontsize=12)
     ax[1].set_xlabel("Quintil actual")
     ax[1].legend()
 
@@ -233,15 +232,15 @@ def plot_mobility(df_filter, df_base):
             s=label,
             ha='center',
             color=color,
-            fontsize=9
+            fontsize=10
         )
 
-    plt.suptitle("Movilidad socioeconómica: Q1 vs Q5", fontsize=13)
-    plt.tight_layout()
+    plt.suptitle("Movilidad socioeconómica: Q1 vs Q5", fontsize=14)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     return fig
 
 # --------------------------------------------------------------------------
-# 4) Lógica de "aleatoriedad" (botón)
+# 4) Lógica de "Aleatoriedad" (botón)
 # --------------------------------------------------------------------------
 def random_filter_selection():
     """
@@ -293,7 +292,7 @@ def main():
     # Botón refresh en la parte principal
     # ---------------------------------------------------
     # Mostramos en la parte superior de la página
-    col1, col2 = st.columns([0.9, 0.1])
+    col1, col2 = st.columns([0.95, 0.05])
     with col1:
         st.markdown("<h2 style='margin-bottom:0;'>Movilidad Socioeconómica Q1 vs Q5</h2>", unsafe_allow_html=True)
     with col2:
@@ -311,41 +310,90 @@ def main():
     st.sidebar.title("Parámetros")
 
     # 1) Sección: Filtro Actual (filtro principal)
-    colA, colB = st.sidebar.columns([0.6, 0.4])
+    colA, colB = st.sidebar.columns([0.7, 0.3])
     with colA:
         st.subheader("Filtro actual (Filtro principal):")
-
     with colB:
-        if st.button("Aleatoriedad", help="Selecciona 2 variables y 1-3 categorías al azar"):
+        if st.button("🎲 Aleatoriedad", help="Selecciona 2 variables y 1-3 categorías al azar"):
             random_filter_selection()
 
-    # Multiselect de variables a filtrar
-    st.session_state['selected_vars'] = st.sidebar.multiselect(
-        "Selecciona las variables (máximo 3)",
+    # Multiselect de variables a filtrar (hasta 3)
+    selected_vars = st.sidebar.multiselect(
+        "Selecciona hasta 3 variables para filtrar:",
         options=['generation','sex','education'],
         default=st.session_state['selected_vars'],
-        max_selections=3
+        max_selections=3,
+        key="multi_select_vars"
     )
 
-    # Para cada variable seleccionada, pedimos sus categorías
-    if 'generation' in st.session_state['selected_vars']:
-        st.session_state['cats_generation'] = st.sidebar.multiselect(
-            "Generación:",
-            ['Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist','NA'],
-            default=st.session_state['cats_generation']
+    st.session_state['selected_vars'] = selected_vars  # Actualizar el estado
+
+    # Para cada variable seleccionada, pedimos sus categorías (selección múltiple)
+    for var in selected_vars:
+        if var == 'generation':
+            st.session_state['cats_generation'] = st.sidebar.multiselect(
+                "Generación:",
+                ['Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist','NA'],
+                default=st.session_state.get('cats_generation', []),
+                key="cats_generation"
+            )
+        elif var == 'sex':
+            st.session_state['cats_sex'] = st.sidebar.multiselect(
+                "Sexo:",
+                ['Hombre','Mujer'],
+                default=st.session_state.get('cats_sex', []),
+                key="cats_sex"
+            )
+        elif var == 'education':
+            st.session_state['cats_education'] = st.sidebar.multiselect(
+                "Nivel de estudios:",
+                ['Primaria','Secundaria','Preparatoria','Universidad','Posgrado','Otro','NA'],
+                default=st.session_state.get('cats_education', []),
+                key="cats_education"
+            )
+
+    # 2) Sección: Cambiar base (ubicado al final)
+    st.sidebar.markdown("---")
+    cambiar_base = st.sidebar.checkbox("Cambiar base", value=False)
+
+    if cambiar_base:
+        # Añadir controles para la base personalizada
+        st.sidebar.subheader("Base personalizada:")
+
+        # Selección de variables para la base (hasta 3)
+        base_selected_vars = st.sidebar.multiselect(
+            "Selecciona hasta 3 variables para la base:",
+            options=['generation','sex','education'],
+            default=st.session_state.get('base_selected_vars', []),
+            max_selections=3,
+            key="base_multi_select_vars"
         )
-    if 'sex' in st.session_state['selected_vars']:
-        st.session_state['cats_sex'] = st.sidebar.multiselect(
-            "Sexo:",
-            ['Hombre','Mujer'],
-            default=st.session_state['cats_sex']
-        )
-    if 'education' in st.session_state['selected_vars']:
-        st.session_state['cats_education'] = st.sidebar.multiselect(
-            "Nivel de estudios:",
-            ['Primaria','Secundaria','Preparatoria','Universidad','Posgrado','Otro','NA'],
-            default=st.session_state['cats_education']
-        )
+
+        st.session_state['base_selected_vars'] = base_selected_vars  # Actualizar estado
+
+        # Para cada variable seleccionada, pedimos sus categorías
+        for var in base_selected_vars:
+            if var == 'generation':
+                st.session_state['base_cats_generation'] = st.sidebar.multiselect(
+                    "Generación (base):",
+                    ['Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist','NA'],
+                    default=st.session_state.get('base_cats_generation', []),
+                    key="base_cats_generation"
+                )
+            elif var == 'sex':
+                st.session_state['base_cats_sex'] = st.sidebar.multiselect(
+                    "Sexo (base):",
+                    ['Hombre','Mujer'],
+                    default=st.session_state.get('base_cats_sex', []),
+                    key="base_cats_sex"
+                )
+            elif var == 'education':
+                st.session_state['base_cats_education'] = st.sidebar.multiselect(
+                    "Nivel de estudios (base):",
+                    ['Primaria','Secundaria','Preparatoria','Universidad','Posgrado','Otro','NA'],
+                    default=st.session_state.get('base_cats_education', []),
+                    key="base_cats_education"
+                )
 
     # Carga de datos
     df = load_and_process_data()
@@ -353,52 +401,13 @@ def main():
     # Aplicar el filtro principal
     df_filter = apply_dynamic_filter(df)
 
-    # 2) Sección: Cambiar base
-    st.sidebar.markdown("---")
-    cambiar_base = st.sidebar.checkbox("Cambiar base", value=False)
-
+    # Aplicar el filtro de la base
     if cambiar_base:
-        # Mismos controles (o parecidos) para la base
-        st.sidebar.markdown("**Base personalizada** (elige variables/categorías):")
-        # Para simplificar, usaremos un set aparte. Ej: base_vars, base_cats
-        if 'base_selected_vars' not in st.session_state:
-            st.session_state['base_selected_vars'] = []
-        if 'base_cats_generation' not in st.session_state:
-            st.session_state['base_cats_generation'] = []
-        if 'base_cats_sex' not in st.session_state:
-            st.session_state['base_cats_sex'] = []
-        if 'base_cats_education' not in st.session_state:
-            st.session_state['base_cats_education'] = []
-
-        st.session_state['base_selected_vars'] = st.sidebar.multiselect(
-            "Variables base:",
-            options=['generation','sex','education'],
-            default=st.session_state['base_selected_vars'],
-            max_selections=3
-        )
-
-        # Para cada variable de base
-        if 'generation' in st.session_state['base_selected_vars']:
-            st.session_state['base_cats_generation'] = st.sidebar.multiselect(
-                "Gen (base):",
-                ['Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist','NA'],
-                default=st.session_state['base_cats_generation']
-            )
-        if 'sex' in st.session_state['base_selected_vars']:
-            st.session_state['base_cats_sex'] = st.sidebar.multiselect(
-                "Sexo (base):",
-                ['Hombre','Mujer'],
-                default=st.session_state['base_cats_sex']
-            )
-        if 'education' in st.session_state['base_selected_vars']:
-            st.session_state['base_cats_education'] = st.sidebar.multiselect(
-                "Educación (base):",
-                ['Primaria','Secundaria','Preparatoria','Universidad','Posgrado','Otro','NA'],
-                default=st.session_state['base_cats_education']
-            )
-
-        # Aplicar ese filtro
         def apply_base_filter(df):
+            """
+            Aplica un filtro a df en función de st.session_state['base_selected_vars']
+            y de las categorías elegidas en st.session_state['base_cats_<var>'].
+            """
             dff = df.copy()
             for var in st.session_state['base_selected_vars']:
                 chosen_cats = st.session_state.get(f"base_cats_{var}", [])
@@ -413,9 +422,10 @@ def main():
     # ---------------------------------------------------
     # Mostrar la gráfica en la página principal
     # ---------------------------------------------------
+    st.subheader("Visualización")
+
     fig = plot_mobility(df_filter, df_base)
     st.pyplot(fig)
-
 
 # --------------------------------------------------------------------------
 if __name__ == "__main__":
