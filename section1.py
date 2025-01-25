@@ -13,6 +13,7 @@ def show_section1():
     """
     Muestra la sección principal de "Movilidad Socioeconómica Q1 vs Q5".
     """
+
     # 1) Manejo de estado
     if 'selected_vars' not in st.session_state:
         st.session_state['selected_vars'] = []
@@ -82,26 +83,38 @@ def show_section1():
     else:
         main_title = filter_desc or "Sin Filtro (Base General)"
 
-    # 6) Mostrar gráfica
+    # 6) Mostrar gráfica (ligeramente más pequeña que antes)
     fig = plot_mobility(df_filter, df_base, main_title)
     st.pyplot(fig)
 
-    # 7) Logos al final de la página
+    # 7) Logos al final de la página (más pequeños, con "Momentito Cafecito")
     st.markdown("---")
     st.markdown("### ")
-    c1, c2 = st.columns([0.1, 0.1])
+    c1, c2 = st.columns([0.5, 0.5])
     with c1:
-        # Logo YouTube
+        # Logo YouTube con texto reducido y "Momentito Cafecito"
         st.markdown(
-            "[![YouTube](https://cdn-icons-png.flaticon.com/512/1384/1384060.png)]"
-            "(https://www.youtube.com/@momentitocafecito)", 
+            """
+            <a href='https://www.youtube.com/@momentitocafecito' target='_blank'
+               style='text-decoration:none;'>
+                <img src='https://cdn-icons-png.flaticon.com/512/1384/1384060.png'
+                     height='25' style='vertical-align:middle;' />
+                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+            </a>
+            """,
             unsafe_allow_html=True
         )
     with c2:
-        # Logo Instagram (ajusta tu enlace)
+        # Logo Instagram con texto reducido y "Momentito Cafecito"
         st.markdown(
-            "[![Instagram](https://cdn-icons-png.flaticon.com/512/1384/1384063.png)]"
-            "(https://instagram.com/momentitocafecito)", 
+            """
+            <a href='https://instagram.com/momentitocafecito' target='_blank'
+               style='text-decoration:none;'>
+                <img src='https://cdn-icons-png.flaticon.com/512/1384/1384063.png'
+                     height='25' style='vertical-align:middle;' />
+                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+            </a>
+            """,
             unsafe_allow_html=True
         )
 
@@ -121,11 +134,12 @@ def show_section1():
         El eje Y muestra la "Probabilidad de moverse a otra Clase".
         """)
 
+
 def random_filter_selection():
     """
     Elige aleatoriamente 2 variables y 1..3 categorías de cada una.
     """
-    # Limpiamos variables actuales
+    import random
     for var in POSSIBLE_VARS:
         st.session_state[f"cats_{var}"] = []
 
@@ -139,7 +153,6 @@ def random_filter_selection():
         cat_options = VAR_CATEGORIES.get(var, [])
         if not cat_options:
             continue
-        # Escoge 1..3 categorías
         num_cats = random.randint(1, min(3, len(cat_options)))
         chosen_cats = random.sample(cat_options, num_cats)
         st.session_state[f"cats_{var}"] = chosen_cats
@@ -163,10 +176,8 @@ def show_base_filters(df):
     Muestra en la barra lateral los filtros para la 'base'.
     Guarda el resultado en st.session_state['df_base'].
     """
-    # Variables de base
     if 'base_selected_vars' not in st.session_state:
         st.session_state['base_selected_vars'] = []
-    # Aseguramos listas de categorías para la base
     for var in POSSIBLE_VARS:
         key_base_cats = f"base_cats_{var}"
         if key_base_cats not in st.session_state:
@@ -189,14 +200,11 @@ def show_base_filters(df):
             default=st.session_state[f"base_cats_{var}"]
         )
 
-    # Aplicar ese filtro
     dff = df.copy()
     for var in st.session_state['base_selected_vars']:
         chosen_cats = st.session_state.get(f"base_cats_{var}", [])
         if chosen_cats:
             dff = dff[dff[var].isin(chosen_cats)]
-
-    # Guardarlo en session_state
     st.session_state['df_base'] = dff
 
 def describe_filter_selection(selected_vars, prefix="", base=False):
@@ -214,17 +222,15 @@ def describe_filter_selection(selected_vars, prefix="", base=False):
     if parts:
         return prefix + "[" + "; ".join(parts) + "]"
     else:
-        # Si no hay nada seleccionado
         return prefix + "(Sin selección)"
 
 def plot_mobility(df_filter, df_base, title_text):
     """
     Gráfica Q1 vs. Q5 comparando df_filter (filtro principal) vs df_base (la base).
-    - Q1 -> "Origen Clase Baja"
-    - Q5 -> "Origen Clase Alta"
+    - Origen Clase Baja (Q1)
+    - Origen Clase Alta (Q5)
     - Eje X -> ["Baja Baja","Baja Alta","Media Baja","Media Alta","Alta"]
     - Eje Y -> "Probabilidad de moverse a otra Clase"
-    - Etiquetas de barra un poco más grandes (fontsize=11)
     """
     # Distribución base
     q1_base = df_base[df_base['a_los_14_quintile'] == 1]
@@ -246,8 +252,8 @@ def plot_mobility(df_filter, df_base, title_text):
     q1_dist_filter = q1_dist_filter.sort_index()
     q5_dist_filter = q5_dist_filter.sort_index()
 
-    # Crear figura
-    fig, ax = plt.subplots(1, 2, figsize=(14, 8), sharey=True)
+    # Figura ligeramente más pequeña (10,6)
+    fig, ax = plt.subplots(1, 2, figsize=(10, 6), sharey=True)
 
     # Etiquetas de quintil
     quintil_labels = {
@@ -258,26 +264,25 @@ def plot_mobility(df_filter, df_base, title_text):
         5: "Alta"
     }
 
-    # Para Q1
+    # Subplot Q1
     x_q1 = q1_dist_filter.index
     ax[0].bar(x_q1, q1_dist_base.reindex(x_q1, fill_value=0).values,
               alpha=0.2, color='gray', label='Base')
     ax[0].bar(x_q1, q1_dist_filter.values,
               alpha=1.0, color='skyblue', label='Filtro')
+
     ax[0].set_title("Origen Clase Baja", fontsize=11)
     ax[0].set_xlabel("")
     ax[0].set_ylabel("Probabilidad de moverse a otra Clase")
     ax[0].legend()
 
-    # Eliminar marco superior y derecho
     ax[0].spines["top"].set_visible(False)
     ax[0].spines["right"].set_visible(False)
 
-    # Etiquetas Q1
     for i, quintil in enumerate(x_q1):
         val_f = q1_dist_filter[quintil]
         val_b = q1_dist_base[quintil] if quintil in q1_dist_base else 0
-        diff  = val_f - val_b
+        diff = val_f - val_b
         color = 'green' if diff >= 0 else 'red'
         label = f"{val_f:.1f}% ({diff:+.1f}%)"
         ax[0].text(
@@ -289,29 +294,27 @@ def plot_mobility(df_filter, df_base, title_text):
             fontsize=11
         )
 
-    # Eje X con etiquetas
     ax[0].set_xticks(x_q1)
     ax[0].set_xticklabels([quintil_labels.get(i, str(i)) for i in x_q1])
 
-    # Para Q5
+    # Subplot Q5
     x_q5 = q5_dist_filter.index
     ax[1].bar(x_q5, q5_dist_base.reindex(x_q5, fill_value=0).values,
               alpha=0.2, color='gray', label='Base')
     ax[1].bar(x_q5, q5_dist_filter.values,
               alpha=1.0, color='salmon', label='Filtro')
+
     ax[1].set_title("Origen Clase Alta", fontsize=11)
     ax[1].set_xlabel("")
 
-    # Eliminar marco superior, derecho e izquierdo
     ax[1].spines["top"].set_visible(False)
     ax[1].spines["right"].set_visible(False)
-    ax[1].spines["left"].set_visible(False)
+    ax[1].spines["left"].set_visible(False)  # Retiramos marco izquierdo en Q5
 
-    # Etiquetas Q5
     for i, quintil in enumerate(x_q5):
         val_f = q5_dist_filter[quintil]
         val_b = q5_dist_base[quintil] if quintil in q5_dist_base else 0
-        diff  = val_f - val_b
+        diff = val_f - val_b
         color = 'green' if diff >= 0 else 'red'
         label = f"{val_f:.1f}% ({diff:+.1f}%)"
         ax[1].text(
@@ -326,7 +329,6 @@ def plot_mobility(df_filter, df_base, title_text):
     ax[1].set_xticks(x_q5)
     ax[1].set_xticklabels([quintil_labels.get(i, str(i)) for i in x_q5])
 
-    # Título principal dinámico
     plt.suptitle(title_text, fontsize=13)
     plt.tight_layout()
     return fig
