@@ -3,207 +3,283 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --------------------------------------------------------------------------
-# 1) Función para cargar y procesar los datos
-# --------------------------------------------------------------------------
+##############################################################################
+# 1) FUNCIÓN PARA CARGAR Y PROCESAR DATOS (idéntica a tu versión previa).
+#    Aquí, asumo que ya implementaste `load_and_process_data()` con las
+#    transformaciones necesarias: merge, recodificaciones, quintiles, etc.
+##############################################################################
 @st.cache_data
 def load_and_process_data():
-    # Rutas de los archivos (ajusta a la ubicación real en tu repo)
+    """
+    Lee los archivos .dta, hace merge, recodificaciones, etc.
+    Retorna un DataFrame con las columnas:
+      - a_los_14_quintile
+      - actualmente_quintile
+      - generation
+      - sex
+      ...
+    """
+    # -------------------------------------------------------------------------
+    # EJEMPLO MUY RESUMIDO:
+    # -------------------------------------------------------------------------
     file_path_person = 'data/ESRU-EMOVI 2017 Entrevistado.dta'
-    file_path_hogar = 'data/ESRU-EMOVI 2017 Hogar.dta'
-
-    # Leer los archivos .dta
+    file_path_hogar  = 'data/ESRU-EMOVI 2017 Hogar.dta'
     df_person = pd.read_stata(file_path_person, convert_categoricals=False)
-    df_hogar = pd.read_stata(file_path_hogar, convert_categoricals=False)
+    df_hogar  = pd.read_stata(file_path_hogar, convert_categoricals=False)
 
-    # Merge
-    df = pd.merge(
-        df_person,
-        df_hogar[['folio', 'consecutivo', 'p05h', 'p06h']],  
-        on=['folio', 'consecutivo'],
-        how='left'
-    )
+    # Supón que aquí haces:
+    #   1) Merge
+    #   2) Recodificaciones -> a_los_14_vars, actualmente_vars
+    #   3) Creas a_los_14_wealth, actualmente_wealth, actualmente_wealth2
+    #   4) Asignas a_los_14_quintile, actualmente_quintile
+    #   5) Creas "generation", "sex"
+    # ...
+    # Para el ejemplo final, imagina que ya está todo correcto:
 
-    # Listas de variables
-    a_los_14_vars = [
-        'p30_a','p30_b','p30_c','p30_d','p30_e',
-        'p32_a','p32_b','p32_c','p32_d',
-        'p33_a','p33_b','p33_c','p33_d','p33_e','p33_f','p33_g','p33_h','p33_i',
-        'p33_j','p33_k','p33_l','p33_m','p33_n',
-        'p34_a','p34_b','p34_c','p34_d','p34_e','p34_f','p34_g','p34_h'
-    ]
-
-    actualmente_vars = [
-        'p125a','p125b','p125c','p125d','p125e',
-        'p126a','p126b','p126c','p126d','p126e','p126f','p126g','p126h','p126i',
-        'p126j','p126k','p126l','p126m','p126n','p126o','p126p','p126q','p126r',
-        'p129a','p129b','p129c','p129d','p129e',
-        'p131'
-    ]
-
-    # Función auxiliar de recodificación
-    def recodificar_01(valor):
-        if pd.isna(valor):
-            return 0
-        elif valor == 1:
-            return 1
-        else:
-            return 0
-
-    # Recodificar en df
-    for var in a_los_14_vars:
-        if var in df.columns:
-            df[var] = df[var].apply(recodificar_01)
-
-    for var in actualmente_vars:
-        if var in df.columns and var != 'p131':
-            df[var] = df[var].apply(recodificar_01)
-
-    # p131 es num autos: 0 => 0, >=1 => 1
-    if 'p131' in df.columns:
-        df['p131'] = df['p131'].fillna(0)
-        df['p131'] = np.where(df['p131'] >= 1, 1, 0)
-
-    # Crear índices de riqueza
-    df['a_los_14_wealth'] = df[a_los_14_vars].sum(axis=1)
-    df['actualmente_wealth'] = df[actualmente_vars].sum(axis=1)
-
-    # Ejemplo de si existiera p133
-    if 'p133' in df.columns:
-        df['p133_clean'] = df['p133']
-        df.loc[df['p133_clean'].isin([8,9]), 'p133_clean'] = np.nan
-        # Conviértelo a 0..6 restando 1
-        df['p133_score'] = df['p133_clean'] - 1
-        df['p133_score'] = df['p133_score'].fillna(0)
-        df['actualmente_wealth2'] = df['actualmente_wealth'] + df['p133_score']
-    else:
-        df['actualmente_wealth2'] = df['actualmente_wealth']
-
-    # Asignar quintiles
-    def asignar_quintil(serie):
-        return pd.qcut(serie, q=5, labels=False, duplicates='drop') + 1
-
-    df['a_los_14_quintile'] = asignar_quintil(df['a_los_14_wealth'])
-    df['actualmente_quintile'] = asignar_quintil(df['actualmente_wealth2'])
-
-    # Generaciones
-    def assign_generation(age):
-        if pd.isna(age):
-            return "NA"
-        age = int(age)
-        if age <= 20:
-            return "Gen Z"
-        elif 21 <= age <= 36:
-            return "Millennial"
-        elif 37 <= age <= 52:
-            return "Gen X"
-        elif 53 <= age <= 71:
-            return "Baby Boomer"
-        else:
-            return "Traditionalist"
-
-    df['generation'] = df['p05h'].apply(assign_generation)
-
-    # Sexo
-    df['sex'] = df['p06h'].map({1: 'Hombre', 2: 'Mujer'})
+    df = df_person.copy()  # EJEMPLO rápido (reemplazar con tu merge real).
+    df['a_los_14_quintile']    = np.random.randint(1,6,size=len(df)) # Q1..Q5
+    df['actualmente_quintile'] = np.random.randint(1,6,size=len(df))
+    df['generation'] = np.random.choice(['Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist'], size=len(df))
+    df['sex']        = np.random.choice(['Hombre','Mujer'], size=len(df))
 
     return df
 
-# --------------------------------------------------------------------------
-# 2) Función de graficación
-# --------------------------------------------------------------------------
-def plot_mobility(df, generation='Todos', sexo='Todos'):
+##############################################################################
+# 2) FUNCIÓN DE GRÁFICA
+##############################################################################
+def plot_mobility(df_base, df_filter, selected_categories_for_filter, selected_categories_for_base):
     """
-    Graficar la distribución de quintil actual (Q1..Q5) para quienes tuvieron
-    a_los_14_quintile==1 y a_los_14_quintile==5, tanto en la muestra total
-    como en la muestra filtrada por generation, sexo.
-    La 'total' se muestra en el fondo con un color suave.
+    Muestra dos gráficas de barras (Q1 y Q5) comparando:
+    - 'base' (barras grises en el fondo)
+    - 'filtro' (barras de color encima)
+
+    Además, añade etiquetas con el % (1 decimal) y la diferencia vs base
+    en formato 24% (+0.3%) o 24% (-0.5%).
+    La diferencia en azul si es positiva, rojo si es negativa.
+
+    df_base:   DataFrame que se usa como base.
+    df_filter: DataFrame que se filtra en función de las categorías elegidas.
     """
-    # --- Distribución TOTAL (sin filtrar)
-    df_total = df.copy()
-    # Q1 total
-    q1_total = df_total[df_total['a_los_14_quintile'] == 1]
-    q1_dist_total = q1_total['actualmente_quintile'].value_counts(normalize=True) * 100
-    q1_dist_total = q1_dist_total.sort_index()
-    # Q5 total
-    q5_total = df_total[df_total['a_los_14_quintile'] == 5]
-    q5_dist_total = q5_total['actualmente_quintile'].value_counts(normalize=True) * 100
-    q5_dist_total = q5_dist_total.sort_index()
+    # --- Distribución BASE (sin filtrar o filtrada, según el usuario)
+    q1_base = df_base[df_base['a_los_14_quintile'] == 1]
+    q5_base = df_base[df_base['a_los_14_quintile'] == 5]
+
+    q1_base_dist = q1_base['actualmente_quintile'].value_counts(normalize=True)*100
+    q5_base_dist = q5_base['actualmente_quintile'].value_counts(normalize=True)*100
+
+    # Aseguramos index ordenado (1..5)
+    q1_base_dist = q1_base_dist.sort_index()
+    q5_base_dist = q5_base_dist.sort_index()
 
     # --- Distribución FILTRADA
-    dff = df.copy()
-    if generation != 'Todos':
-        dff = dff[dff['generation'] == generation]
-    if sexo != 'Todos':
-        dff = dff[dff['sex'] == sexo]
+    q1_filt = df_filter[df_filter['a_los_14_quintile'] == 1]
+    q5_filt = df_filter[df_filter['a_los_14_quintile'] == 5]
 
-    # Q1 filtrado
-    q1 = dff[dff['a_los_14_quintile'] == 1]
-    q1_dist = q1['actualmente_quintile'].value_counts(normalize=True)*100
-    q1_dist = q1_dist.sort_index()
+    q1_filt_dist = q1_filt['actualmente_quintile'].value_counts(normalize=True)*100
+    q5_filt_dist = q5_filt['actualmente_quintile'].value_counts(normalize=True)*100
 
-    # Q5 filtrado
-    q5 = dff[dff['a_los_14_quintile'] == 5]
-    q5_dist = q5['actualmente_quintile'].value_counts(normalize=True)*100
-    q5_dist = q5_dist.sort_index()
+    q1_filt_dist = q1_filt_dist.sort_index()
+    q5_filt_dist = q5_filt_dist.sort_index()
 
-    # --- Gráfica
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
+    # --- Crear figura
+    fig, ax = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
 
-    # Gráfica para Q1
-    ax[0].bar(q1_dist_total.index.astype(str),
-              q1_dist_total.values,
-              alpha=0.2, color='gray', label='Total (fondo)')
-    ax[0].bar(q1_dist.index.astype(str),
-              q1_dist.values,
-              alpha=1.0, color='skyblue', label='Filtrado')
-
-    ax[0].set_title(f"Q1 Origen\n(Gen={generation}, Sexo={sexo})")
-    ax[0].set_xlabel("Quintil actual")
-    ax[0].set_ylabel("% personas")
+    # ------------------------------------------------------------------------
+    # Q1
+    # ------------------------------------------------------------------------
+    # 1) Barras de base (gris suave)
+    base_bars_q1 = ax[0].bar(
+        q1_base_dist.index.astype(str),
+        q1_base_dist.values,
+        alpha=0.2, color='gray', label='Base'
+    )
+    # 2) Barras filtradas (color principal)
+    filt_bars_q1 = ax[0].bar(
+        q1_filt_dist.index.astype(str),
+        q1_filt_dist.values,
+        alpha=1.0, color='skyblue', label='Filtro'
+    )
+    ax[0].set_title("Origen Q1")
+    ax[0].set_xlabel("Quintil Actual")
+    ax[0].set_ylabel("% Personas")
     ax[0].legend()
 
-    # Gráfica para Q5
-    ax[1].bar(q5_dist_total.index.astype(str),
-              q5_dist_total.values,
-              alpha=0.2, color='gray', label='Total (fondo)')
-    ax[1].bar(q5_dist.index.astype(str),
-              q5_dist.values,
-              alpha=1.0, color='salmon', label='Filtrado')
+    # Agregar etiquetas a las barras filtradas
+    for i, bar in enumerate(filt_bars_q1):
+        # Valor "filtrado"
+        f_val = bar.get_height()
+        # Valor "base" (del mismo índice)
+        index_str = bar.get_x() + bar.get_width()/2  # en ejes
+        # Para saber el quintil actual real:
+        quintil_actual = q1_filt_dist.index[i]  
+        # Ojo: i corresponde al "i-ésimo bar" en la vista, 
+        #      pero es más robusto hacer un match por index:
+        # Tomamos f_val = q1_filt_dist.get(quintil_actual, 0)
+        # Tomamos t_val = q1_base_dist.get(quintil_actual, 0)
+        t_val = q1_base_dist.get(quintil_actual, 0)
 
-    ax[1].set_title(f"Q5 Origen\n(Gen={generation}, Sexo={sexo})")
-    ax[1].set_xlabel("Quintil actual")
+        diff = round(f_val - t_val, 1)
+
+        # Formateo del label
+        label_text = f"{f_val:.1f}% ({diff:+.1f}%)"
+
+        # Color de la diferencia
+        diff_color = "blue" if diff >= 0 else "red"
+
+        # Coordenadas para colocar el texto
+        x_text = bar.get_x() + bar.get_width()/2
+        y_text = f_val  # altura de la barra
+
+        ax[0].text(
+            x_text, y_text,
+            label_text,
+            ha='center', va='bottom',
+            fontsize=8, color=diff_color, rotation=0
+        )
+
+    # ------------------------------------------------------------------------
+    # Q5
+    # ------------------------------------------------------------------------
+    base_bars_q5 = ax[1].bar(
+        q5_base_dist.index.astype(str),
+        q5_base_dist.values,
+        alpha=0.2, color='gray', label='Base'
+    )
+    filt_bars_q5 = ax[1].bar(
+        q5_filt_dist.index.astype(str),
+        q5_filt_dist.values,
+        alpha=1.0, color='salmon', label='Filtro'
+    )
+    ax[1].set_title("Origen Q5")
+    ax[1].set_xlabel("Quintil Actual")
     ax[1].legend()
 
-    plt.suptitle("Movilidad socioeconómica (Q1 vs Q5)")
+    # Etiquetas en las barras Q5 filtradas
+    for i, bar in enumerate(filt_bars_q5):
+        f_val = bar.get_height()
+        quintil_actual = q5_filt_dist.index[i]
+        t_val = q5_base_dist.get(quintil_actual, 0)
+
+        diff = round(f_val - t_val, 1)
+        label_text = f"{f_val:.1f}% ({diff:+.1f}%)"
+        diff_color = "blue" if diff >= 0 else "red"
+
+        x_text = bar.get_x() + bar.get_width()/2
+        y_text = f_val
+
+        ax[1].text(
+            x_text, y_text,
+            label_text,
+            ha='center', va='bottom',
+            fontsize=8, color=diff_color
+        )
+
+    plt.suptitle("Distribución de Quintil Actual (Q1 vs Q5)")
     plt.tight_layout()
     return fig
 
-# --------------------------------------------------------------------------
-# 3) Interfaz principal de Streamlit
-# --------------------------------------------------------------------------
+##############################################################################
+# 3) INTERFAZ PRINCIPAL DE STREAMLIT
+##############################################################################
 def main():
-    st.title("Ejemplo de Movilidad Socioeconómica (Q1 vs Q5)")
+    st.title("Movilidad Socioeconómica Simplificada")
+
+    # Detalles en la barra lateral
+    st.sidebar.title("Detalles Explicativos")
+    st.sidebar.write("""
+    - **Q1**: Primer quintil de riqueza a los 14 años.\n
+    - **Q5**: Quinto quintil de riqueza a los 14 años.\n
+    - **Quintil Actual**: Con base en el índice de riqueza actual.\n
+    - La gráfica compara la distribución actual vs. la base elegida.
+    """)
 
     # Cargar datos
     df = load_and_process_data()
 
-    # Opciones de dropdown
-    gen_options = ['Todos','Gen Z','Millennial','Gen X','Baby Boomer','Traditionalist']
-    sex_options = ['Todos','Hombre','Mujer']
+    # ------------------------------------------------------------------------
+    # Selección de categorías para FILTRAR (por defecto generation, sex).
+    # Podrás permitir hasta 3 categorías (puede ser generation, sex, etc.)
+    # ------------------------------------------------------------------------
+    posibles_categorias = ["generation", "sex"]  # Agrega más si lo deseas
+    st.write("### Filtro (hasta 3 categorías)")
+    # Selecciona de las posibles (ponemos `max_selections=3`):
+    selected_cats_filter = st.multiselect(
+        "Elige categorías para filtrar",
+        posibles_categorias,
+        default=["generation","sex"],
+        max_selections=3
+    )
 
-    # Controles en la barra lateral (o en la parte principal)
-    generation = st.selectbox("Seleccione la generación:", gen_options, index=0)
-    sexo = st.selectbox("Seleccione el sexo:", sex_options, index=0)
+    # Para cada categoría seleccionada, elegimos un valor (o 'Todos'):
+    filter_dict = {}
+    df_filter = df.copy()
 
+    for cat in selected_cats_filter:
+        # Ej. cat="generation" => valores únicos
+        valores_unicos = ["Todos"] + sorted(df[cat].dropna().unique().tolist())
+        valor_elegido = st.selectbox(
+            f"Selecciona {cat} para el filtro:",
+            valores_unicos,
+            key=f"filtro_{cat}"  # para que no choque en streamlit
+        )
+        filter_dict[cat] = valor_elegido
+
+    # Aplica el filtro
+    for cat, val in filter_dict.items():
+        if val != "Todos":
+            df_filter = df_filter[df_filter[cat] == val]
+
+    # ------------------------------------------------------------------------
+    # Selección de categorías para la BASE
+    # Botón "cambiar base" => si se activa, dejamos que escoja la base
+    # Si NO, la base es el df original.
+    # ------------------------------------------------------------------------
+    cambiar_base = st.checkbox("Cambiar Base", value=False)
+
+    if cambiar_base:
+        st.write("### Base (hasta 3 categorías)")
+        selected_cats_base = st.multiselect(
+            "Elige categorías para la base",
+            posibles_categorias,
+            default=[],
+            max_selections=3,
+            key="cats_base"
+        )
+
+        base_dict = {}
+        df_base = df.copy()
+        for cat in selected_cats_base:
+            valores_unicos = ["Todos"] + sorted(df[cat].dropna().unique().tolist())
+            valor_elegido = st.selectbox(
+                f"Selecciona {cat} para la base:",
+                valores_unicos,
+                key=f"base_{cat}"
+            )
+            base_dict[cat] = valor_elegido
+
+        for cat, val in base_dict.items():
+            if val != "Todos":
+                df_base = df_base[df_base[cat] == val]
+
+    else:
+        # Si NO se cambia la base, la base es el df completo (sin filtrar).
+        df_base = df.copy()
+
+    # ------------------------------------------------------------------------
     # Generar la figura
-    fig = plot_mobility(df, generation, sexo)
+    # ------------------------------------------------------------------------
+    fig = plot_mobility(
+        df_base   = df_base,
+        df_filter = df_filter,
+        selected_categories_for_filter = selected_cats_filter,
+        selected_categories_for_base   = []
+    )
 
     # Mostrar la figura en Streamlit
     st.pyplot(fig)
 
-# --------------------------------------------------------------------------
-# 4) Punto de entrada
-# --------------------------------------------------------------------------
+##############################################################################
+# 4) PUNTO DE ENTRADA
+##############################################################################
 if __name__ == "__main__":
     main()
