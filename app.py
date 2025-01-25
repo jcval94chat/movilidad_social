@@ -5,17 +5,16 @@ from section1 import show_section1
 from section2 import show_section2
 
 def main():
-    # Pequeño control (discreto) para cambiar sección
-    st.sidebar.markdown("**Navegación**")
-    section = st.sidebar.radio(
-        "Ir a sección:",
-        ("Movilidad", "Otra sección"),
-        label_visibility="collapsed"  # para ocupar menos espacio
-    )
+    # Configura la página (opcional), por ejemplo layout "wide" para más espacio
+    st.set_page_config(layout="wide")
 
-    if section == "Movilidad":
+    # Navegación con Tabs
+    tab1, tab2 = st.tabs(["Movilidad", "Otra sección"])
+
+    with tab1:
         show_section1()
-    else:
+
+    with tab2:
         show_section2()
 
 if __name__ == "__main__":
