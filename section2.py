@@ -2,32 +2,114 @@
 
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
 
 from data_utils import load_and_process_data
 
+# Diccionario para mapear las categorías del usuario a quintiles.
+CLASS_TO_QUINTILES = {
+    "Baja Baja": [1],
+    "Baja Alta": [2],
+    "Media Baja": [3],
+    "Media Alta": [4],
+    "Alta": [5]
+}
+
 def show_section2():
     """
-    Sección 2:
-    Ejemplo de cálculo de cohorts (cada 3 años), 
-    y porcentajes de movilidad para 'ricos de origen', 'pobres de origen', etc.
+    Movilidad por Cohortes:
+    - Aplica filtros de la barra lateral (excepto generación).
+    - Cohortes de 3 años.
+    - El usuario elige Origen y Destino (clase).
+    - Se muestra un lineplot interactivo con Plotly.
     """
 
-    st.title("Sección 2 - Análisis por Cohorte")
+    st.title("Movilidad por Cohortes")
 
-    # 1) Carga de datos
+    # 1) Cargar datos
     df = load_and_process_data()
 
-    # 2) Función auxiliar
-    def assign_cohort_5y(row_age, base_year=2017, step=3):
-        """
-        row_age: edad en 2017
-        base_year: año en que se realizó la encuesta (2017)
-        step: tamaño del intervalo (por defecto, 3 años en este caso)
+    # 2) Crear la columna de cohort_5y si no existe
+    #    (La calculamos cada vez para seguridad, o asumimos que no está en el DF)
+    df = add_cohort_5y_column(df, step=3)
 
-        Devuelve un string del estilo '1950-1952', '1953-1955', etc.
-        """
+    # 3) Aplicar filtro de la barra lateral (excepto 'generation')
+    df_filtered = apply_filter_except_generation(df)
+
+    # 4) Controles de Origen y Destino
+    st.subheader("Selecciona Origen y Destino")
+    origin_class = st.selectbox(
+        "Origen:",
+        list(CLASS_TO_QUINTILES.keys()),
+        index=4  # Por ejemplo, "Alta" como default
+    )
+    dest_class = st.selectbox(
+        "Destino:",
+        list(CLASS_TO_QUINTILES.keys()),
+        index=4  # Por ejemplo, "Alta"
+    )
+
+    # 5) Calcular la métrica: porcentaje de quienes estaban en 'origin_class'
+    #    que se mueven a 'dest_class', por cohorte y sexo.
+    #    - 'origin_mask': df['a_los_14_quintile'].isin(CLASS_TO_QUINTILES[origin_class])
+    #    - 'dest_mask': df['actualmente_quintile'].isin(CLASS_TO_QUINTILES[dest_class])
+
+    origin_quintiles = CLASS_TO_QUINTILES[origin_class]
+    dest_quintiles   = CLASS_TO_QUINTILES[dest_class]
+
+    df_filtered['in_origin'] = df_filtered['a_los_14_quintile'].isin(origin_quintiles)
+    df_filtered['in_dest']   = df_filtered['actualmente_quintile'].isin(dest_quintiles)
+
+    # Solo analizamos quienes estaban en el origen
+    df_origin = df_filtered[df_filtered['in_origin'] == True].copy()
+
+    grouped = df_origin.groupby(['cohort_5y','sex'])
+    n_origin = grouped.size().rename("n_origin")
+    n_dest   = grouped['in_dest'].sum().rename("n_dest")
+
+    df_stats = pd.concat([n_origin, n_dest], axis=1).reset_index()
+    df_stats['pct_dest'] = (df_stats['n_dest'] / df_stats['n_origin']) * 100
+
+    # 6) Extraer año de inicio de cohorte (para eje X)
+    df_stats['cohort_start'] = df_stats['cohort_5y'].apply(get_lower_year)
+    # Ordenar y filtrar NA
+    df_stats.sort_values('cohort_start', inplace=True)
+    df_stats.dropna(subset=['cohort_start'], inplace=True)
+
+    # 7) Título dinámico
+    chart_title = f"Porcentaje de {origin_class} que se mueven a {dest_class}"
+
+    # 8) Graficar con Plotly para interactividad
+    fig = px.line(
+        df_stats,
+        x='cohort_start',
+        y='pct_dest',
+        color='sex',
+        markers=True,
+        title=chart_title,
+        labels={
+            'cohort_start': "Año en que naciste",
+            'pct_dest': "% que se mueven",
+            'sex': "Sexo"
+        }
+    )
+
+    # Ajustes de layout
+    fig.update_layout(
+        xaxis_title="Año en que naciste",
+        yaxis_title=f"Porcentaje que se mueven a {dest_class}",
+        legend_title_text="Sexo"
+    )
+
+    # Mostrar en Streamlit con interactividad
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def add_cohort_5y_column(df, base_year=2017, step=3):
+    """
+    Crea la columna 'cohort_5y' (tramos de 'step' años) a partir de la edad en p05h.
+    """
+    def assign_cohort_5y(row_age):
         if pd.isna(row_age):
             return "NA"
         birth_year = base_year - int(row_age)
@@ -35,56 +117,32 @@ def show_section2():
         upper_bound = lower_bound + (step - 1)
         return f"{lower_bound}-{upper_bound}"
 
-    # 3) Crear columna 'cohort_5y'
     df['cohort_5y'] = df['p05h'].apply(assign_cohort_5y)
+    return df
 
-    # 4) Definir pobres, ricos, medios en origen/destino
-    df['poor_origin'] = df['a_los_14_quintile'].isin([1,2])
-    df['rich_origin'] = df['a_los_14_quintile'].isin([4,5])
-    df['middle_origin'] = (df['a_los_14_quintile'] == 3)
 
-    df['poor_dest'] = df['actualmente_quintile'].isin([1,2])
-    df['rich_dest'] = df['actualmente_quintile'].isin([4,5])
-    df['middle_dest'] = (df['actualmente_quintile'] == 3)
+def get_lower_year(cohort_str):
+    """
+    Extrae el año inferior de un string tipo '1950-1952'.
+    """
+    if cohort_str == "NA" or pd.isna(cohort_str):
+        return None
+    return int(cohort_str.split('-')[0])
 
-    # 5) Análisis Ricos de origen
-    df_rich = df[df['rich_origin'] == True]
-    grouped_rich = df_rich.groupby(['cohort_5y','sex'], dropna=True)
 
-    n_rich = grouped_rich.size().rename("n_rich")
-    n_rich_stay = grouped_rich['rich_dest'].sum().rename("n_rich_stay")
-
-    df_rich_stats = pd.concat([n_rich, n_rich_stay], axis=1)
-    df_rich_stats['pct_stay_rich'] = (df_rich_stats['n_rich_stay'] / df_rich_stats['n_rich']) * 100
-    df_rich_stats.reset_index(inplace=True)
-
-    # Cohort start (año inferior)
-    def get_lower_year(cohort_str):
-        if cohort_str == "NA" or pd.isna(cohort_str):
-            return None
-        return int(cohort_str.split('-')[0])
-
-    df_rich_stats['cohort_start'] = df_rich_stats['cohort_5y'].apply(get_lower_year)
-    df_rich_stats.sort_values('cohort_start', inplace=True)
-    df_rich_stats = df_rich_stats.dropna(subset=['cohort_start'])
-
-    # 6) Gráfica: % de ricos que se mantienen en Q4/Q5
-    fig, ax = plt.subplots(figsize=(8,5))
-    sns.lineplot(
-        data=df_rich_stats,
-        x='cohort_start',
-        y='pct_stay_rich',
-        hue='sex',
-        marker='o',
-        ax=ax
-    )
-    ax.set_title("Porcentaje de los 'ricos de origen' que se mantienen en Q4/Q5")
-    ax.set_xlabel("Año de inicio de cohorte (nacimiento cada 3 años)")
-    ax.set_ylabel("% que permanecen en Q4/Q5")
-
-    # 7) Mostramos la figura con Streamlit
-    st.pyplot(fig)
-
-    # NOTA: Si deseas mostrar pobres o clase media, 
-    # podrías usar df_poor_stats, df_mid_stats de manera similar.
-    # (Se omitió para no alargar en exceso.)
+def apply_filter_except_generation(df):
+    """
+    Aplica los filtros de la barra lateral (sex, education, etc.) ignorando 'generation'.
+    Esto reutiliza st.session_state['selected_vars'] y st.session_state[f"cats_{var}"].
+    """
+    dff = df.copy()
+    if 'selected_vars' not in st.session_state:
+        return dff  # No hay filtros
+    for var in st.session_state['selected_vars']:
+        # Omitimos 'generation'
+        if var == 'generation':
+            continue
+        chosen_cats = st.session_state.get(f"cats_{var}", [])
+        if chosen_cats:
+            dff = dff[dff[var].isin(chosen_cats)]
+    return dff

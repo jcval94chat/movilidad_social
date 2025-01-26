@@ -5,7 +5,6 @@ from section1 import show_section1
 from section2 import show_section2
 
 def main():
-    # Configura la página (opcional), por ejemplo layout "wide" para más espacio
     st.set_page_config(layout="wide")
 
     # Navegación con Tabs
