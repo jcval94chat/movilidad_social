@@ -6,8 +6,13 @@ import plotly.express as px
 
 from data_utils import load_and_process_data
 
-# Define consistent colors for categories (if needed)
-# For example, if you have specific categories from sidebar filters, map them to colors
+# Definir una paleta de colores consistente (misma que en section1.py)
+COLOR_PALETTE = {
+    'Base': 'gray',
+    'Filtro': 'skyblue',
+    'Base_dest': 'gray',
+    'Filtro_dest': 'salmon'
+}
 
 # Diccionario para mapear las clases (Baja Baja, etc.) a quintiles
 CLASS_TO_QUINTILES = {
@@ -28,51 +33,78 @@ def show_section2():
     - Se ignora 'generation' en los filtros, pero sí se dividen líneas según
       las variables (sexo, education, etc.) seleccionadas en la barra lateral.
     """
-    # 1) Barra lateral: Botones de Reset y Aleatoriedad
-    st.sidebar.subheader("Controles")
-    if st.sidebar.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section2"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.experimental_rerun()
-    if st.sidebar.button("🎲", help="Aleatoriedad en Origen/Destino", key="random_section2"):
-        random_origin_dest()
-        st.experimental_rerun()
 
-    # 2) Crear df con la columna 'cohort_5y'
+    # 1) Manejo de estado para controles de origen/destino
+    if 'origin_default' not in st.session_state:
+        st.session_state['origin_default'] = ["Media Alta"]
+    if 'dest_default' not in st.session_state:
+        st.session_state['dest_default'] = ["Alta"]
+
+    # 2) Barra lateral: Selección de variables y categorías
+    st.sidebar.subheader("Filtro actual (filtro principal):")
+    st.session_state['selected_vars'] = st.sidebar.multiselect(
+        "Selecciona las variables (máximo 3)",
+        options=POSSIBLE_VARS,
+        default=st.session_state['selected_vars'],
+        max_selections=3
+    )
+
+    # Para cada variable seleccionada, mostrar multiselect de categorías
+    for var in st.session_state['selected_vars']:
+        cat_options = VAR_CATEGORIES.get(var, [])
+        st.session_state[f"cats_{var}"] = st.sidebar.multiselect(
+            f"{var.capitalize()}:",
+            cat_options,
+            default=st.session_state[f"cats_{var}"]
+        )
+
+    # 3) Botones de Reset y Aleatoriedad en la barra lateral, alineados a la derecha
+    button_col1, button_col2 = st.sidebar.columns([1, 1])
+    with button_col1:
+        if st.sidebar.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section2"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.experimental_rerun()  # Alternativamente, usa st.rerun()
+    with button_col2:
+        if st.sidebar.button("🎲", help="Aleatoriedad en Origen/Destino", key="random_section2"):
+            random_origin_dest()
+            st.experimental_rerun()
+
+    # 4) Crear df con la columna 'cohort_5y'
     df = load_and_process_data()
     df = add_cohort_5y_column(df, step=3)
 
-    # 3) Aplicar filtro excepto generation
+    # 5) Aplicar filtro excepto generation
     df_filtered = apply_filter_except_generation(df)
 
-    # 4) Controles Origen y Destino en la misma fila (multiselects con dos columnas)
-    c1, c2 = st.columns(2)
+    # 6) Controles Origen y Destino en la misma fila (multiselects con dos columnas)
+    c1, c2 = st.sidebar.columns(2)
     with c1:
         origin_multisel = st.multiselect(
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
             default=st.session_state.get("origin_default", ["Media Alta"]),
-            key="origin_multisel_section2"
+            key="origin_multisel"
         )
     with c2:
         dest_multisel = st.multiselect(
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
             default=st.session_state.get("dest_default", ["Alta"]),
-            key="dest_multisel_section2"
+            key="dest_multisel"
         )
 
     # Guardamos la selección actual por si refrescan
     st.session_state["origin_default"] = origin_multisel
     st.session_state["dest_default"]   = dest_multisel
 
-    # 5) Crear la columna "group_label" combinando las variables del sidebar (except gen)
+    # 7) Crear la columna "group_label" combinando las variables del sidebar (except gen)
     #    para la división de líneas. Si no hay variables, será una sola línea.
     color_column = create_label_column(df_filtered)
 
-    # 6) Calcular la métrica: % de origen -> destino
-    #    Origen: union de quintiles de las clases en origin_multisel
-    #    Destino: union de quintiles de las clases en dest_multisel
+    # 8) Calcular la métrica: % de origen -> destino
+    #    Origen: unión de quintiles de las clases en origin_multisel
+    #    Destino: unión de quintiles de las clases en dest_multisel
     origin_quintiles = set()
     for cls in origin_multisel:
         origin_quintiles.update(CLASS_TO_QUINTILES[cls])
@@ -98,7 +130,7 @@ def show_section2():
     df_stats.sort_values('cohort_start', inplace=True)
     df_stats.dropna(subset=['cohort_start'], inplace=True)
 
-    # 7) Armar un título (ej. "Porcentaje de [Media Alta] que se mueven a [Alta]")
+    # 9) Armar un título (ej. "Porcentaje de [Media Alta] que se mueven a [Alta]")
     if not origin_multisel:
         origin_multisel = ["(Ninguno)"]
     if not dest_multisel:
@@ -107,7 +139,7 @@ def show_section2():
     dest_str = ", ".join(dest_multisel)
     chart_title = f"Porcentaje de {origin_str} que se mueven a {dest_str}"
 
-    # 8) Graficar con Plotly
+    # 10) Graficar con Plotly
     fig = px.line(
         df_stats,
         x='cohort_start',
@@ -119,21 +151,24 @@ def show_section2():
             'cohort_start': "Año en que naciste",
             'pct_dest': f"% que se mueven",
             color_column: "Categoría"
-        }
+        },
+        color_discrete_sequence=px.colors.qualitative.Plotly  # Mantener paleta consistente
     )
     fig.update_layout(
         xaxis_title="Año en que naciste",
         yaxis_title=f"Porcentaje que se mueven",
         legend_title_text="Categoría",
-        width=800,  # Ajustado para mejor visualización
-        height=600   # Ajustado
+        height=700,  # Ajustado para mejor visualización
+        width=900,
+        plot_bgcolor='white',
+        hovermode='closest'
     )
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # 9) Logos al final de la página (más pequeños, con "Momentito Cafecito")
+    # 11) Logos al final de la página (más pequeños, con "Momentito Cafecito")
     st.markdown("---")
     st.markdown("### ")
     c1, c2 = st.columns([0.5, 0.5])
@@ -168,11 +203,11 @@ def random_origin_dest():
     import random
     classes = list(CLASS_TO_QUINTILES.keys())
     # Elegimos 1..2 clases al azar para origen
-    n_orig = random.randint(1, 2)
+    n_orig = random.randint(1,2)
     origin = random.sample(classes, n_orig)
 
     # Elegimos 1..2 clases al azar para destino
-    n_dest = random.randint(1, 2)
+    n_dest = random.randint(1,2)
     dest = random.sample(classes, n_dest)
 
     st.session_state["origin_default"] = origin
