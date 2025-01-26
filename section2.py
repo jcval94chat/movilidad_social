@@ -6,6 +6,7 @@ import plotly.express as px
 
 from data_utils import load_and_process_data
 
+# Diccionario para mapear clases a quintiles
 CLASS_TO_QUINTILES = {
     "Baja Baja": [1],
     "Baja Alta": [2],
@@ -14,48 +15,69 @@ CLASS_TO_QUINTILES = {
     "Alta": [5]
 }
 
+def random_origin_dest():
+    """
+    Elige aleatoriamente 1..2 clases para ORIGEN y 1..2 para DESTINO.
+    Se invoca al dar clic en el botón "Random" en main.py.
+    """
+    import random
+    classes = list(CLASS_TO_QUINTILES.keys())
+    # Origen
+    n_orig = random.randint(1, 2)
+    origin = random.sample(classes, n_orig)
+    # Destino
+    n_dest = random.randint(1, 2)
+    dest   = random.sample(classes, n_dest)
+
+    st.session_state["origin_default"] = origin
+    st.session_state["dest_default"]   = dest
+
 def show_section2():
     """
-    Sección 2: Evolución Temporal
-    (Los botones de refresh / aleatoriedad están ahora en main.py).
+    Evolución Temporal (Sección 2)
+    Aplica los filtros de la barra lateral excepto 'generation'.
     """
-
-    # 1) Carga datos y crea cohort_5y
+    # 1) Cargar y procesar datos
     df = load_and_process_data()
     df = add_cohort_5y_column(df, step=3)
 
     # 2) Filtro excepto generation
     df_filtered = apply_filter_except_generation(df)
 
-    # 3) Controles de Origen / Destino (multiselect) en la misma fila
-    c1, c2 = st.columns(2)
-    with c1:
+    # 3) Controles Origen y Destino (multiselect)
+    #    Con valores por defecto si no existen en session_state
+    if "origin_default" not in st.session_state:
+        st.session_state["origin_default"] = ["Media Alta"]
+    if "dest_default" not in st.session_state:
+        st.session_state["dest_default"] = ["Alta"]
+
+    colA, colB = st.columns(2)
+    with colA:
         origin_multisel = st.multiselect(
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
-            default=st.session_state.get("origin_default", ["Media Alta"]),
+            default=st.session_state["origin_default"],
             key="origin_multisel"
         )
-    with c2:
+    with colB:
         dest_multisel = st.multiselect(
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
-            default=st.session_state.get("dest_default", ["Alta"]),
+            default=st.session_state["dest_default"],
             key="dest_multisel"
         )
 
-    # Guardamos la selección
+    # Guardamos la última selección
     st.session_state["origin_default"] = origin_multisel
     st.session_state["dest_default"]   = dest_multisel
 
-    # 4) Construimos la columna color (group_label) con las vars del sidebar (except gen)
+    # 4) Armamos el "group_label" para color (multilíneas si hay más filtros)
     color_column = create_label_column(df_filtered)
 
-    # 5) Cálculo de % Origen->Destino
+    # 5) Filtramos quienes estaban en 'Origen'
     origin_quintiles = set()
     for cls in origin_multisel:
         origin_quintiles.update(CLASS_TO_QUINTILES[cls])
-
     dest_quintiles = set()
     for cls in dest_multisel:
         dest_quintiles.update(CLASS_TO_QUINTILES[cls])
@@ -65,28 +87,29 @@ def show_section2():
 
     df_origin = df_filtered[df_filtered['in_origin'] == True].copy()
 
+    # 6) Group by cohorte + color_column
     grouped = df_origin.groupby(['cohort_5y', color_column], dropna=False)
     n_origin = grouped.size().rename("n_origin")
     n_dest   = grouped['in_dest'].sum().rename("n_dest")
+
     df_stats = pd.concat([n_origin, n_dest], axis=1).reset_index()
     df_stats['pct_dest'] = (df_stats['n_dest'] / df_stats['n_origin']) * 100
 
+    # Convertir cohort_5y a valor numérico
     df_stats['cohort_start'] = df_stats['cohort_5y'].apply(get_lower_year)
     df_stats.sort_values('cohort_start', inplace=True)
     df_stats.dropna(subset=['cohort_start'], inplace=True)
 
-    # 6) Armar título
+    # 7) Gráfica
     if not origin_multisel:
         origin_multisel = ["(Ninguno)"]
     if not dest_multisel:
         dest_multisel = ["(Ninguno)"]
     origin_str = ", ".join(origin_multisel)
     dest_str = ", ".join(dest_multisel)
+
     chart_title = f"Porcentaje de {origin_str} que se mueven a {dest_str}"
 
-    # 7) Graficar con Plotly
-    #    Usar la misma paleta que Sección 1, p.ej.
-    color_sequence = ["skyblue","salmon","gray","green","red"]  
     fig = px.line(
         df_stats,
         x='cohort_start',
@@ -98,22 +121,21 @@ def show_section2():
             'cohort_start': "Año en que naciste",
             'pct_dest': "% que se mueven",
             color_column: "Categoría"
-        },
-        color_discrete_sequence=color_sequence
+        }
+        # Podrías definir color_discrete_sequence para "igualar" la paleta
+        # color_discrete_sequence=["gray","skyblue","salmon","green","red",...]
     )
     fig.update_layout(
-        xaxis_title="Año en que naciste",
-        yaxis_title="Porcentaje que se mueven",
-        legend_title_text="Categoría",
         width=800,
-        height=600
+        height=600,
+        legend_title_text="Categoría",
     )
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
 
     st.plotly_chart(fig, use_container_width=True)
 
-    # 8) Logos
+    # 8) Logos finales
     st.markdown("---")
     c1, c2 = st.columns([0.5, 0.5])
     with c1:
@@ -141,31 +163,14 @@ def show_section2():
             unsafe_allow_html=True
         )
 
-def random_origin_dest_section2():
-    """
-    Aleatoriza la selección de Origen y Destino para Sección 2
-    (1..2 clases en origen, 1..2 en destino).
-    """
-    import random
-    classes = list(CLASS_TO_QUINTILES.keys())
-    n_orig = random.randint(1,2)
-    origin = random.sample(classes, n_orig)
-    n_dest = random.randint(1,2)
-    dest = random.sample(classes, n_dest)
-
-    st.session_state["origin_default"] = origin
-    st.session_state["dest_default"]   = dest
-
-
 def add_cohort_5y_column(df, base_year=2017, step=3):
-    def assign_cohort_5y(row_age):
-        if pd.isna(row_age):
+    def assign_cohort_5y(age):
+        if pd.isna(age):
             return "NA"
-        birth_year = base_year - int(row_age)
+        birth_year = base_year - int(age)
         lower_bound = (birth_year // step) * step
         upper_bound = lower_bound + (step - 1)
         return f"{lower_bound}-{upper_bound}"
-
     df['cohort_5y'] = df['p05h'].apply(assign_cohort_5y)
     return df
 
@@ -175,9 +180,9 @@ def get_lower_year(cohort_str):
     return int(cohort_str.split('-')[0])
 
 def apply_filter_except_generation(df):
-    dff = df.copy()
     if 'selected_vars' not in st.session_state:
-        return dff
+        return df
+    dff = df.copy()
     for var in st.session_state['selected_vars']:
         if var == 'generation':
             continue
@@ -187,6 +192,9 @@ def apply_filter_except_generation(df):
     return dff
 
 def create_label_column(df):
+    """
+    Combina las variables seleccionadas (except generation) para 'color'.
+    """
     if 'selected_vars' not in st.session_state:
         df['group_label'] = "All"
         return 'group_label'
@@ -198,8 +206,7 @@ def create_label_column(df):
     def make_label(row):
         parts = []
         for v in chosen_vars:
-            val = row[v]
-            parts.append(f"{v}={val}")
+            parts.append(f"{v}={row[v]}")
         return " | ".join(parts)
 
     df['group_label'] = df.apply(make_label, axis=1)
