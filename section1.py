@@ -88,7 +88,7 @@ def show_section1():
     fig = plot_mobility_interactive(df_filter, df_base)
 
     # Colocamos el título principal arriba de la figura
-    st.markdown("## Movilidad Socioeconómica Q1 vs Q5")
+    # st.markdown("## Movilidad Socioeconómica Q1 vs Q5")
     st.write(f"*{main_title}*")
 
     st.plotly_chart(fig, use_container_width=True)

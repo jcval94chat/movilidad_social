@@ -12,14 +12,14 @@ def main():
     # -----------------------------------------------------------------
     col_btn1, col_btn2 = st.sidebar.columns([0.5, 0.5])
     with col_btn1:
-        if st.button("Refresh", key="refresh_main", help="Recargar la app"):
+        if st.button("⟳ Refresh", key="refresh_main", help="Recargar la app"):
             # Limpia todo el session_state y recarga
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
 
     with col_btn2:
-        if st.button("Random", key="random_main", help="Selección aleatoria"):
+        if st.button("🎲 Random", key="random_main", help="Selección aleatoria"):
             # Aplica la lógica de random a Sección 1 (Movilidad)
             random_section1()
             # Aplica la lógica de random a Sección 2 (Evolución Temporal)
@@ -34,7 +34,7 @@ def main():
     # -----------------------------------------------------------------
     # TABS
     # -----------------------------------------------------------------
-    tab1, tab2 = st.tabs(["Movilidad", "Evolución Temporal"])
+    tab1, tab2 = st.tabs(["Mov. Baja v Alta", "Evolución Temporal"])
 
     with tab1:
         show_section1()

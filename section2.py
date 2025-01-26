@@ -118,8 +118,8 @@ def show_section2():
         markers=True,
         title=chart_title,
         labels={
-            'cohort_start': "Año en que naciste",
-            'pct_dest': "% que se mueven",
+            'cohort_start': "Año de nacimiento",
+            'pct_dest': "Probabilidad de cambio",
             color_column: "Categoría"
         }
         # Podrías definir color_discrete_sequence para "igualar" la paleta
