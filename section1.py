@@ -3,21 +3,20 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import random
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from data_utils import load_and_process_data
 from config import VAR_CATEGORIES, POSSIBLE_VARS
 
 def show_section1():
     """
-    Muestra la sección principal de "Movilidad Socioeconómica Q1 vs Q5".
+    Sección 1: Movilidad Socioeconómica Q1 vs Q5 (interactiva con Plotly).
     """
 
     # 1) Manejo de estado
     if 'selected_vars' not in st.session_state:
         st.session_state['selected_vars'] = []
-    # Aseguramos que cada variable tenga su lista de categorías
     for var in POSSIBLE_VARS:
         key_name = f"cats_{var}"
         if key_name not in st.session_state:
@@ -32,26 +31,23 @@ def show_section1():
         if st.button("⟳", help="Recargar la app (reset a valores originales)"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
-            st.rerun()  # En Streamlit >= 1.18
+            st.rerun()
     with col3:
-        # Botón de Dados (aleatoriedad)
+        # Botón Dados (aleatoriedad)
         if st.button("🎲", help="Selecciona 2 variables y 1-3 categorías al azar"):
             random_filter_selection()
 
-    st.markdown("Visualiza cómo cambian los quintiles de riqueza desde la infancia (Q1 o Q5) hasta la actualidad.")
+    # (Quitamos el texto "Visualiza cómo cambian..." solicitado)
 
-    # 3) Barra lateral: Selección de variables y categorías
+    # 3) Barra lateral: Selección de variables
     st.sidebar.subheader("Filtro actual (filtro principal):")
-
-    # Multiselect de variables
     st.session_state['selected_vars'] = st.sidebar.multiselect(
         "Selecciona las variables (máximo 3)",
         options=POSSIBLE_VARS,
         default=st.session_state['selected_vars'],
         max_selections=3
     )
-
-    # Para cada variable seleccionada, mostrar multiselect de categorías
+    # Para cada variable
     for var in st.session_state['selected_vars']:
         cat_options = VAR_CATEGORIES.get(var, [])
         st.session_state[f"cats_{var}"] = st.sidebar.multiselect(
@@ -63,7 +59,7 @@ def show_section1():
     # Carga de datos
     df = load_and_process_data()
 
-    # Aplicar el filtro principal
+    # Aplicar filtro principal
     df_filter = apply_dynamic_filter(df)
 
     # 4) Cambiar base
@@ -75,7 +71,7 @@ def show_section1():
     else:
         df_base = df
 
-    # 5) Construir un título dinámico según el filtro y la base
+    # 5) Título principal dinámico (descripción de filtros)
     filter_desc = describe_filter_selection(st.session_state['selected_vars'], prefix="Filtro: ")
     if cambiar_base and 'base_selected_vars' in st.session_state and st.session_state['base_selected_vars']:
         base_desc = describe_filter_selection(st.session_state['base_selected_vars'], prefix="Base: ", base=True)
@@ -83,16 +79,15 @@ def show_section1():
     else:
         main_title = filter_desc or "Sin Filtro (Base General)"
 
-    # 6) Mostrar gráfica (ligeramente más pequeña que antes)
-    fig = plot_mobility(df_filter, df_base, main_title)
-    st.pyplot(fig)
+    # 6) Graficar con Plotly
+    fig = plot_mobility_interactive(df_filter, df_base, main_title)
+    st.plotly_chart(fig, use_container_width=True)
 
-    # 7) Logos al final de la página (más pequeños, con "Momentito Cafecito")
+    # 7) Logos al final
     st.markdown("---")
     st.markdown("### ")
     c1, c2 = st.columns([0.5, 0.5])
     with c1:
-        # Logo YouTube con texto reducido y "Momentito Cafecito"
         st.markdown(
             """
             <a href='https://www.youtube.com/@momentitocafecito' target='_blank'
@@ -105,7 +100,6 @@ def show_section1():
             unsafe_allow_html=True
         )
     with c2:
-        # Logo Instagram con texto reducido y "Momentito Cafecito"
         st.markdown(
             """
             <a href='https://instagram.com/momentitocafecito' target='_blank'
@@ -118,7 +112,7 @@ def show_section1():
             unsafe_allow_html=True
         )
 
-    # 8) Detalles al final de la barra lateral
+    # 8) Detalles en un expander
     with st.sidebar.expander("Detalles"):
         st.write("""
         **Origen Clase Baja:** Personas que estaban en el quintil más bajo (Q1).
@@ -136,19 +130,14 @@ def show_section1():
 
 
 def random_filter_selection():
-    """
-    Elige aleatoriamente 2 variables y 1..3 categorías de cada una.
-    """
     import random
     for var in POSSIBLE_VARS:
         st.session_state[f"cats_{var}"] = []
 
-    # Elige 2 variables al azar
     num_vars = 2
     chosen_vars = random.sample(POSSIBLE_VARS, num_vars)
     st.session_state['selected_vars'] = chosen_vars
 
-    # Para cada variable, elige categorías
     for var in chosen_vars:
         cat_options = VAR_CATEGORIES.get(var, [])
         if not cat_options:
@@ -160,10 +149,6 @@ def random_filter_selection():
     st.rerun()
 
 def apply_dynamic_filter(df):
-    """ 
-    Aplica un filtro a df en función de 'selected_vars'
-    y las categorías elegidas en st.session_state[f"cats_{var}"].
-    """
     dff = df.copy()
     for var in st.session_state['selected_vars']:
         chosen_cats = st.session_state.get(f"cats_{var}", [])
@@ -172,10 +157,6 @@ def apply_dynamic_filter(df):
     return dff
 
 def show_base_filters(df):
-    """
-    Muestra en la barra lateral los filtros para la 'base'.
-    Guarda el resultado en st.session_state['df_base'].
-    """
     if 'base_selected_vars' not in st.session_state:
         st.session_state['base_selected_vars'] = []
     for var in POSSIBLE_VARS:
@@ -184,7 +165,6 @@ def show_base_filters(df):
             st.session_state[key_base_cats] = []
 
     st.sidebar.markdown("**Base personalizada**:")
-
     st.session_state['base_selected_vars'] = st.sidebar.multiselect(
         "Variables base:",
         options=POSSIBLE_VARS,
@@ -208,10 +188,6 @@ def show_base_filters(df):
     st.session_state['df_base'] = dff
 
 def describe_filter_selection(selected_vars, prefix="", base=False):
-    """
-    Construye una cadena con las variables y categorías seleccionadas.
-    Ej: "Filtro: [generation=Millennial, sex=Mujer]"
-    """
     parts = []
     for var in selected_vars:
         chosen_cats = st.session_state.get(f"{'base_cats_' if base else 'cats_'}{var}", [])
@@ -224,38 +200,36 @@ def describe_filter_selection(selected_vars, prefix="", base=False):
     else:
         return prefix + "(Sin selección)"
 
-def plot_mobility(df_filter, df_base, title_text):
+def plot_mobility_interactive(df_filter, df_base, title_text):
     """
-    Gráfica Q1 vs. Q5 comparando df_filter (filtro principal) vs df_base (la base).
-    - Origen Clase Baja (Q1)
-    - Origen Clase Alta (Q5)
-    - Eje X -> ["Baja Baja","Baja Alta","Media Baja","Media Alta","Alta"]
-    - Eje Y -> "Probabilidad de moverse a otra Clase"
+    Produce 2 subplots (Q1 vs Q5) con Plotly, en modo de barras:
+    - "Base" (gris, alpha=0.2)
+    - "Filtro" (skyblue / salmon)
+    Muestra las etiquetas en dos renglones:
+       line1: "XX.X%"
+       line2: "(+YY.Y%)"
     """
-    # Distribución base
+    # Cálculo de distribuciones
+    # Q1 base
     q1_base = df_base[df_base['a_los_14_quintile'] == 1]
-    q5_base = df_base[df_base['a_los_14_quintile'] == 5]
-
     q1_dist_base = q1_base['actualmente_quintile'].value_counts(normalize=True)*100
-    q5_dist_base = q5_base['actualmente_quintile'].value_counts(normalize=True)*100
-
     q1_dist_base = q1_dist_base.sort_index()
+
+    # Q1 filtro
+    q1_filter = df_filter[df_filter['a_los_14_quintile'] == 1]
+    q1_dist_filter = q1_filter['actualmente_quintile'].value_counts(normalize=True)*100
+    q1_dist_filter = q1_dist_filter.sort_index()
+
+    # Q5 base
+    q5_base = df_base[df_base['a_los_14_quintile'] == 5]
+    q5_dist_base = q5_base['actualmente_quintile'].value_counts(normalize=True)*100
     q5_dist_base = q5_dist_base.sort_index()
 
-    # Distribución filtro
-    q1_filter = df_filter[df_filter['a_los_14_quintile'] == 1]
+    # Q5 filtro
     q5_filter = df_filter[df_filter['a_los_14_quintile'] == 5]
-
-    q1_dist_filter = q1_filter['actualmente_quintile'].value_counts(normalize=True)*100
     q5_dist_filter = q5_filter['actualmente_quintile'].value_counts(normalize=True)*100
-
-    q1_dist_filter = q1_dist_filter.sort_index()
     q5_dist_filter = q5_dist_filter.sort_index()
 
-    # Figura ligeramente más pequeña (10,6)
-    fig, ax = plt.subplots(1, 2, figsize=(10, 6), sharey=True)
-
-    # Etiquetas de quintil
     quintil_labels = {
         1: "Baja Baja",
         2: "Baja Alta",
@@ -264,71 +238,104 @@ def plot_mobility(df_filter, df_base, title_text):
         5: "Alta"
     }
 
-    # Subplot Q1
-    x_q1 = q1_dist_filter.index
-    ax[0].bar(x_q1, q1_dist_base.reindex(x_q1, fill_value=0).values,
-              alpha=0.2, color='gray', label='Base')
-    ax[0].bar(x_q1, q1_dist_filter.values,
-              alpha=1.0, color='skyblue', label='Filtro')
+    # Ejes X
+    x_q1 = list(q1_dist_filter.index)
+    x_q5 = list(q5_dist_filter.index)
 
-    ax[0].set_title("Origen Clase Baja", fontsize=11)
-    ax[0].set_xlabel("")
-    ax[0].set_ylabel("Probabilidad de moverse a otra Clase")
-    ax[0].legend()
+    # Textos para Q1 base/filtro
+    text_q1_base = []
+    text_q1_filter = []
+    for quintil in x_q1:
+        val_f = q1_dist_filter.get(quintil, 0)
+        val_b = q1_dist_base.get(quintil, 0)
+        diff  = val_f - val_b
+        # Dividimos en 2 renglones
+        txt = f"{val_f:.1f}%<br>({diff:+.1f}%)"
+        text_q1_filter.append(txt)
 
-    ax[0].spines["top"].set_visible(False)
-    ax[0].spines["right"].set_visible(False)
+        # La base también podría llevar un texto, pero quizás no es relevante
+        # Por consistencia, le ponemos su valor, sin diff
+        text_q1_base.append(f"{val_b:.1f}%")
 
-    for i, quintil in enumerate(x_q1):
-        val_f = q1_dist_filter[quintil]
-        val_b = q1_dist_base[quintil] if quintil in q1_dist_base else 0
-        diff = val_f - val_b
-        color = 'green' if diff >= 0 else 'red'
-        label = f"{val_f:.1f}% ({diff:+.1f}%)"
-        ax[0].text(
-            x=quintil,
-            y=val_f + 1,
-            s=label,
-            ha='center',
-            color=color,
-            fontsize=11
-        )
+    # Textos para Q5 base/filtro
+    text_q5_base = []
+    text_q5_filter = []
+    for quintil in x_q5:
+        val_f = q5_dist_filter.get(quintil, 0)
+        val_b = q5_dist_base.get(quintil, 0)
+        diff  = val_f - val_b
+        txt = f"{val_f:.1f}%<br>({diff:+.1f}%)"
+        text_q5_filter.append(txt)
+        text_q5_base.append(f"{val_b:.1f}%")
 
-    ax[0].set_xticks(x_q1)
-    ax[0].set_xticklabels([quintil_labels.get(i, str(i)) for i in x_q1])
+    # Crear subplots
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True,
+                        subplot_titles=["Origen Clase Baja", "Origen Clase Alta"])
 
-    # Subplot Q5
-    x_q5 = q5_dist_filter.index
-    ax[1].bar(x_q5, q5_dist_base.reindex(x_q5, fill_value=0).values,
-              alpha=0.2, color='gray', label='Base')
-    ax[1].bar(x_q5, q5_dist_filter.values,
-              alpha=1.0, color='salmon', label='Filtro')
+    # Subplot 1 (Q1)
+    fig.add_trace(
+        go.Bar(
+            x=[quintil_labels.get(k, str(k)) for k in x_q1],
+            y=[q1_dist_base.get(k, 0) for k in x_q1],
+            name="Base",
+            marker_color="gray",
+            opacity=0.2,
+            text=text_q1_base,
+            textposition='outside'
+        ),
+        row=1, col=1
+    )
+    fig.add_trace(
+        go.Bar(
+            x=[quintil_labels.get(k, str(k)) for k in x_q1],
+            y=[q1_dist_filter.get(k, 0) for k in x_q1],
+            name="Filtro",
+            marker_color="skyblue",
+            text=text_q1_filter,
+            textposition='outside'
+        ),
+        row=1, col=1
+    )
 
-    ax[1].set_title("Origen Clase Alta", fontsize=11)
-    ax[1].set_xlabel("")
+    # Subplot 2 (Q5)
+    fig.add_trace(
+        go.Bar(
+            x=[quintil_labels.get(k, str(k)) for k in x_q5],
+            y=[q5_dist_base.get(k, 0) for k in x_q5],
+            name="Base",
+            marker_color="gray",
+            opacity=0.2,
+            text=text_q5_base,
+            textposition='outside'
+        ),
+        row=1, col=2
+    )
+    fig.add_trace(
+        go.Bar(
+            x=[quintil_labels.get(k, str(k)) for k in x_q5],
+            y=[q5_dist_filter.get(k, 0) for k in x_q5],
+            name="Filtro",
+            marker_color="salmon",
+            text=text_q5_filter,
+            textposition='outside'
+        ),
+        row=1, col=2
+    )
 
-    ax[1].spines["top"].set_visible(False)
-    ax[1].spines["right"].set_visible(False)
-    ax[1].spines["left"].set_visible(False)  # Retiramos marco izquierdo en Q5
+    fig.update_layout(
+        title=title_text,
+        barmode='group',
+        showlegend=True
+    )
 
-    for i, quintil in enumerate(x_q5):
-        val_f = q5_dist_filter[quintil]
-        val_b = q5_dist_base[quintil] if quintil in q5_dist_base else 0
-        diff = val_f - val_b
-        color = 'green' if diff >= 0 else 'red'
-        label = f"{val_f:.1f}% ({diff:+.1f}%)"
-        ax[1].text(
-            x=quintil,
-            y=val_f + 1,
-            s=label,
-            ha='center',
-            color=color,
-            fontsize=11
-        )
+    # Ocultar marco top/right en ambos subplots, y left en Q5
+    fig.update_xaxes(showline=False, showgrid=False)
+    fig.update_yaxes(showline=False, showgrid=False)
 
-    ax[1].set_xticks(x_q5)
-    ax[1].set_xticklabels([quintil_labels.get(i, str(i)) for i in x_q5])
+    # Q5 subplot => quitar spines left
+    fig.update_yaxes(showline=False, showgrid=False, row=1, col=2)
 
-    plt.suptitle(title_text, fontsize=13)
-    plt.tight_layout()
+    # Eje Y => "Probabilidad de moverse a otra Clase"
+    fig.update_yaxes(title_text="Probabilidad de moverse a otra Clase", row=1, col=1)
+
     return fig
