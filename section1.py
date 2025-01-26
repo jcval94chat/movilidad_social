@@ -27,19 +27,18 @@ def show_section1():
     with col1:
         st.markdown("<h2 style='margin-bottom:0;'>Movilidad Socioeconómica Q1 vs Q5</h2>", unsafe_allow_html=True)
     with col2:
-        # Botón Refresh
-        if st.button("⟳", help="Recargar la app (reset a valores originales)"):
+        # Botón Refresh con key único
+        if st.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section1"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
     with col3:
-        # Botón Dados (aleatoriedad)
-        if st.button("🎲", help="Selecciona 2 variables y 1-3 categorías al azar"):
+        # Botón de Dados (aleatoriedad) con key único
+        if st.button("🎲", help="Selecciona 2 variables y 1-3 categorías al azar", key="random_section1"):
             random_filter_selection()
+            st.rerun()
 
-    # (Quitamos el texto "Visualiza cómo cambian..." solicitado)
-
-    # 3) Barra lateral: Selección de variables
+    # 3) Barra lateral: Selección de variables y categorías
     st.sidebar.subheader("Filtro actual (filtro principal):")
     st.session_state['selected_vars'] = st.sidebar.multiselect(
         "Selecciona las variables (máximo 3)",
@@ -47,7 +46,8 @@ def show_section1():
         default=st.session_state['selected_vars'],
         max_selections=3
     )
-    # Para cada variable
+
+    # Para cada variable seleccionada, mostrar multiselect de categorías
     for var in st.session_state['selected_vars']:
         cat_options = VAR_CATEGORIES.get(var, [])
         st.session_state[f"cats_{var}"] = st.sidebar.multiselect(
@@ -56,13 +56,13 @@ def show_section1():
             default=st.session_state[f"cats_{var}"]
         )
 
-    # Carga de datos
+    # 4) Carga de datos
     df = load_and_process_data()
 
-    # Aplicar filtro principal
+    # 5) Aplicar el filtro principal
     df_filter = apply_dynamic_filter(df)
 
-    # 4) Cambiar base
+    # 6) Cambiar base
     st.sidebar.markdown("---")
     cambiar_base = st.sidebar.checkbox("Cambiar base", value=False)
     if cambiar_base:
@@ -71,7 +71,7 @@ def show_section1():
     else:
         df_base = df
 
-    # 5) Título principal dinámico (descripción de filtros)
+    # 7) Construir un título dinámico según el filtro y la base
     filter_desc = describe_filter_selection(st.session_state['selected_vars'], prefix="Filtro: ")
     if cambiar_base and 'base_selected_vars' in st.session_state and st.session_state['base_selected_vars']:
         base_desc = describe_filter_selection(st.session_state['base_selected_vars'], prefix="Base: ", base=True)
@@ -79,11 +79,11 @@ def show_section1():
     else:
         main_title = filter_desc or "Sin Filtro (Base General)"
 
-    # 6) Graficar con Plotly
+    # 8) Mostrar gráfica (ligeramente más pequeña que antes)
     fig = plot_mobility_interactive(df_filter, df_base, main_title)
     st.plotly_chart(fig, use_container_width=True)
 
-    # 7) Logos al final
+    # 9) Logos al final de la página (más pequeños, con "Momentito Cafecito")
     st.markdown("---")
     st.markdown("### ")
     c1, c2 = st.columns([0.5, 0.5])
@@ -112,7 +112,7 @@ def show_section1():
             unsafe_allow_html=True
         )
 
-    # 8) Detalles en un expander
+    # 10) Detalles en un expander
     with st.sidebar.expander("Detalles"):
         st.write("""
         **Origen Clase Baja:** Personas que estaban en el quintil más bajo (Q1).
@@ -130,25 +130,36 @@ def show_section1():
 
 
 def random_filter_selection():
+    """
+    Elige aleatoriamente 2 variables y 1..3 categorías de cada una.
+    """
     import random
     for var in POSSIBLE_VARS:
         st.session_state[f"cats_{var}"] = []
 
+    # Elige 2 variables al azar
     num_vars = 2
     chosen_vars = random.sample(POSSIBLE_VARS, num_vars)
     st.session_state['selected_vars'] = chosen_vars
 
+    # Para cada variable, elige categorías
     for var in chosen_vars:
         cat_options = VAR_CATEGORIES.get(var, [])
         if not cat_options:
             continue
+        # Escoge 1..3 categorías
         num_cats = random.randint(1, min(3, len(cat_options)))
         chosen_cats = random.sample(cat_options, num_cats)
         st.session_state[f"cats_{var}"] = chosen_cats
 
     st.rerun()
 
+
 def apply_dynamic_filter(df):
+    """
+    Aplica un filtro a df en función de 'selected_vars'
+    y las categorías elegidas en st.session_state[f"cats_{var}"].
+    """
     dff = df.copy()
     for var in st.session_state['selected_vars']:
         chosen_cats = st.session_state.get(f"cats_{var}", [])
@@ -156,7 +167,12 @@ def apply_dynamic_filter(df):
             dff = dff[dff[var].isin(chosen_cats)]
     return dff
 
+
 def show_base_filters(df):
+    """
+    Muestra en la barra lateral los filtros para la 'base'.
+    Guarda el resultado en st.session_state['df_base'].
+    """
     if 'base_selected_vars' not in st.session_state:
         st.session_state['base_selected_vars'] = []
     for var in POSSIBLE_VARS:
@@ -165,6 +181,7 @@ def show_base_filters(df):
             st.session_state[key_base_cats] = []
 
     st.sidebar.markdown("**Base personalizada**:")
+
     st.session_state['base_selected_vars'] = st.sidebar.multiselect(
         "Variables base:",
         options=POSSIBLE_VARS,
@@ -187,7 +204,12 @@ def show_base_filters(df):
             dff = dff[dff[var].isin(chosen_cats)]
     st.session_state['df_base'] = dff
 
+
 def describe_filter_selection(selected_vars, prefix="", base=False):
+    """
+    Construye una cadena con las variables y categorías seleccionadas.
+    Ej: "Filtro: [generation=Millennial, sex=Mujer]"
+    """
     parts = []
     for var in selected_vars:
         chosen_cats = st.session_state.get(f"{'base_cats_' if base else 'cats_'}{var}", [])
@@ -200,32 +222,32 @@ def describe_filter_selection(selected_vars, prefix="", base=False):
     else:
         return prefix + "(Sin selección)"
 
+
 def plot_mobility_interactive(df_filter, df_base, title_text):
     """
-    Produce 2 subplots (Q1 vs Q5) con Plotly, en modo de barras:
-    - "Base" (gris, alpha=0.2)
+    Produce 2 subplots (Origen Clase Baja y Origen Clase Alta) con Plotly, en modo de barras:
+    - "Base" (gris, opacity=0.2)
     - "Filtro" (skyblue / salmon)
     Muestra las etiquetas en dos renglones:
        line1: "XX.X%"
        line2: "(+YY.Y%)"
     """
+
     # Cálculo de distribuciones
-    # Q1 base
+    # Origen Clase Baja (Q1)
     q1_base = df_base[df_base['a_los_14_quintile'] == 1]
     q1_dist_base = q1_base['actualmente_quintile'].value_counts(normalize=True)*100
     q1_dist_base = q1_dist_base.sort_index()
 
-    # Q1 filtro
     q1_filter = df_filter[df_filter['a_los_14_quintile'] == 1]
     q1_dist_filter = q1_filter['actualmente_quintile'].value_counts(normalize=True)*100
     q1_dist_filter = q1_dist_filter.sort_index()
 
-    # Q5 base
+    # Origen Clase Alta (Q5)
     q5_base = df_base[df_base['a_los_14_quintile'] == 5]
     q5_dist_base = q5_base['actualmente_quintile'].value_counts(normalize=True)*100
     q5_dist_base = q5_dist_base.sort_index()
 
-    # Q5 filtro
     q5_filter = df_filter[df_filter['a_los_14_quintile'] == 5]
     q5_dist_filter = q5_filter['actualmente_quintile'].value_counts(normalize=True)*100
     q5_dist_filter = q5_dist_filter.sort_index()
@@ -253,8 +275,7 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
         txt = f"{val_f:.1f}%<br>({diff:+.1f}%)"
         text_q1_filter.append(txt)
 
-        # La base también podría llevar un texto, pero quizás no es relevante
-        # Por consistencia, le ponemos su valor, sin diff
+        # Base: solo el porcentaje
         text_q1_base.append(f"{val_b:.1f}%")
 
     # Textos para Q5 base/filtro
@@ -268,9 +289,12 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
         text_q5_filter.append(txt)
         text_q5_base.append(f"{val_b:.1f}%")
 
-    # Crear subplots
-    fig = make_subplots(rows=1, cols=2, shared_yaxes=True,
-                        subplot_titles=["Origen Clase Baja", "Origen Clase Alta"])
+    # Crear subplots con Plotly
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Origen Clase Baja", "Origen Clase Alta"),
+        shared_yaxes=True
+    )
 
     # Subplot 1 (Q1)
     fig.add_trace(
@@ -281,7 +305,8 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
             marker_color="gray",
             opacity=0.2,
             text=text_q1_base,
-            textposition='outside'
+            textposition='outside',
+            hoverinfo='none'
         ),
         row=1, col=1
     )
@@ -292,7 +317,8 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
             name="Filtro",
             marker_color="skyblue",
             text=text_q1_filter,
-            textposition='outside'
+            textposition='outside',
+            hovertemplate='%{text}<extra></extra>'
         ),
         row=1, col=1
     )
@@ -306,7 +332,8 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
             marker_color="gray",
             opacity=0.2,
             text=text_q5_base,
-            textposition='outside'
+            textposition='outside',
+            hoverinfo='none'
         ),
         row=1, col=2
     )
@@ -317,25 +344,29 @@ def plot_mobility_interactive(df_filter, df_base, title_text):
             name="Filtro",
             marker_color="salmon",
             text=text_q5_filter,
-            textposition='outside'
+            textposition='outside',
+            hovertemplate='%{text}<extra></extra>'
         ),
         row=1, col=2
     )
 
+    # Actualizar layout
     fig.update_layout(
         title=title_text,
         barmode='group',
-        showlegend=True
+        showlegend=True,
+        width=900,  # Reducido de 1000 a 900
+        height=600  # Reducido de 800 a 600
     )
 
-    # Ocultar marco top/right en ambos subplots, y left en Q5
-    fig.update_xaxes(showline=False, showgrid=False)
-    fig.update_yaxes(showline=False, showgrid=False)
-
-    # Q5 subplot => quitar spines left
-    fig.update_yaxes(showline=False, showgrid=False, row=1, col=2)
-
-    # Eje Y => "Probabilidad de moverse a otra Clase"
+    # Ocultar marcos superior y derecho en ambos subplots, y el izquierdo en Q5
+    for i in range(1, 3):
+        fig.update_xaxes(showline=False, showgrid=False, row=1, col=i)
+        fig.update_yaxes(showline=False, showgrid=False, row=1, col=i)
+        if i == 2:
+            fig.update_yaxes(showline=False, showgrid=False, row=1, col=i, showticklabels=True)
+            # En Plotly, los marcos no son tan directos, pero podemos ajustar el layout
+            # Si necesitas más personalización, podrías usar shapes or other properties
     fig.update_yaxes(title_text="Probabilidad de moverse a otra Clase", row=1, col=1)
 
     return fig

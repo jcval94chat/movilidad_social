@@ -26,18 +26,20 @@ def show_section2():
       las variables (sexo, education, etc.) seleccionadas en la barra lateral.
     """
 
-    # 1) Encabezado con botones
+    # 1) Encabezado con botones: Reset y Dados
     col1, col2, col3 = st.columns([0.8, 0.1, 0.1])
     with col1:
         # No se muestra st.title() ni texto "Selecciona..."
         st.markdown("<h2 style='margin-bottom:0;'> </h2>", unsafe_allow_html=True)
     with col2:
-        if st.button("⟳", help="Recargar la app (reset a valores originales)"):
+        # Botón Reset con key único
+        if st.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section2"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
     with col3:
-        if st.button("🎲", help="Aleatoriedad en Origen/Destino"):
+        # Botón Dados (aleatoriedad) con key único
+        if st.button("🎲", help="Aleatoriedad en Origen/Destino", key="random_section2"):
             random_origin_dest()
             st.rerun()
 
@@ -48,19 +50,21 @@ def show_section2():
     # 3) Aplicar filtro excepto generation
     df_filtered = apply_filter_except_generation(df)
 
-    # 4) Controles Origen y Destino en la misma fila
+    # 4) Controles Origen y Destino en la misma fila (multiselects con dos columnas)
     c1, c2 = st.columns(2)
     with c1:
         origin_multisel = st.multiselect(
-            "Origen:",
+            "",
             options=list(CLASS_TO_QUINTILES.keys()),
-            default=st.session_state.get("origin_default", ["Media Alta"])
+            default=st.session_state.get("origin_default", ["Media Alta"]),
+            key="origin_multisel"
         )
     with c2:
         dest_multisel = st.multiselect(
-            "Destino:",
+            "",
             options=list(CLASS_TO_QUINTILES.keys()),
-            default=st.session_state.get("dest_default", ["Alta"])
+            default=st.session_state.get("dest_default", ["Alta"]),
+            key="dest_multisel"
         )
 
     # Guardamos la selección actual por si refrescan
@@ -104,7 +108,9 @@ def show_section2():
         origin_multisel = ["(Ninguno)"]
     if not dest_multisel:
         dest_multisel = ["(Ninguno)"]
-    chart_title = f"Porcentaje de {origin_multisel} que se mueven a {dest_multisel}"
+    origin_str = ", ".join(origin_multisel)
+    dest_str = ", ".join(dest_multisel)
+    chart_title = f"Porcentaje de {origin_str} que se mueven a {dest_str}"
 
     # 8) Graficar con Plotly
     fig = px.line(
@@ -123,10 +129,43 @@ def show_section2():
     fig.update_layout(
         xaxis_title="Año en que naciste",
         yaxis_title=f"Porcentaje que se mueven",
-        legend_title_text="Categoría"
+        legend_title_text="Categoría",
+        width=800,  # Reducido para mejor visualización
+        height=600  # Ajustado
     )
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=False)
+
     st.plotly_chart(fig, use_container_width=True)
 
+    # 9) Logos al final de la página (más pequeños, con "Momentito Cafecito")
+    st.markdown("---")
+    st.markdown("### ")
+    c1, c2 = st.columns([0.5, 0.5])
+    with c1:
+        st.markdown(
+            """
+            <a href='https://www.youtube.com/@momentitocafecito' target='_blank'
+               style='text-decoration:none;'>
+                <img src='https://cdn-icons-png.flaticon.com/512/1384/1384060.png'
+                     height='25' style='vertical-align:middle;' />
+                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
+    with c2:
+        st.markdown(
+            """
+            <a href='https://instagram.com/momentitocafecito' target='_blank'
+               style='text-decoration:none;'>
+                <img src='https://cdn-icons-png.flaticon.com/512/1384/1384063.png'
+                     height='25' style='vertical-align:middle;' />
+                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
 
 def random_origin_dest():
     """Elige aleatoriamente origen y destino (multiselect)."""
@@ -180,7 +219,7 @@ def create_label_column(df):
     """
     Combina las variables (except 'generation') seleccionadas en la barra lateral
     en una sola columna 'group_label' para que px.line pinte líneas separadas.
-    Si no se selecciona nada, todos irán en un mismo grupo ("All").
+    Si no se seleccionan variables, todos irán en un mismo grupo ("All").
     """
     if 'selected_vars' not in st.session_state:
         df['group_label'] = "All"
