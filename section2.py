@@ -6,6 +6,9 @@ import plotly.express as px
 
 from data_utils import load_and_process_data
 
+# Define consistent colors for categories (if needed)
+# For example, if you have specific categories from sidebar filters, map them to colors
+
 # Diccionario para mapear las clases (Baja Baja, etc.) a quintiles
 CLASS_TO_QUINTILES = {
     "Baja Baja": [1],
@@ -18,30 +21,22 @@ CLASS_TO_QUINTILES = {
 def show_section2():
     """
     Evolución Temporal (Sección 2):
-    - Botones de reset y aleatoriedad en la parte superior.
+    - Botones de reset y aleatoriedad en la barra lateral.
     - Origen/Destino como multiselect en una sola fila (2 columnas).
     - Por defecto: Origen=["Media Alta"], Destino=["Alta"].
     - Se genera una gráfica de líneas usando Plotly, con cohortes de 3 años.
     - Se ignora 'generation' en los filtros, pero sí se dividen líneas según
       las variables (sexo, education, etc.) seleccionadas en la barra lateral.
     """
-
-    # 1) Encabezado con botones: Reset y Dados
-    col1, col2, col3 = st.columns([0.8, 0.1, 0.1])
-    with col1:
-        # No se muestra st.title() ni texto "Selecciona..."
-        st.markdown("<h2 style='margin-bottom:0;'> </h2>", unsafe_allow_html=True)
-    with col2:
-        # Botón Reset con key único
-        if st.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section2"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.rerun()
-    with col3:
-        # Botón Dados (aleatoriedad) con key único
-        if st.button("🎲", help="Aleatoriedad en Origen/Destino", key="random_section2"):
-            random_origin_dest()
-            st.rerun()
+    # 1) Barra lateral: Botones de Reset y Aleatoriedad
+    st.sidebar.subheader("Controles")
+    if st.sidebar.button("⟳", help="Recargar la app (reset a valores originales)", key="refresh_section2"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
+    if st.sidebar.button("🎲", help="Aleatoriedad en Origen/Destino", key="random_section2"):
+        random_origin_dest()
+        st.experimental_rerun()
 
     # 2) Crear df con la columna 'cohort_5y'
     df = load_and_process_data()
@@ -57,14 +52,14 @@ def show_section2():
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
             default=st.session_state.get("origin_default", ["Media Alta"]),
-            key="origin_multisel"
+            key="origin_multisel_section2"
         )
     with c2:
         dest_multisel = st.multiselect(
             "",
             options=list(CLASS_TO_QUINTILES.keys()),
             default=st.session_state.get("dest_default", ["Alta"]),
-            key="dest_multisel"
+            key="dest_multisel_section2"
         )
 
     # Guardamos la selección actual por si refrescan
@@ -130,8 +125,8 @@ def show_section2():
         xaxis_title="Año en que naciste",
         yaxis_title=f"Porcentaje que se mueven",
         legend_title_text="Categoría",
-        width=800,  # Reducido para mejor visualización
-        height=600  # Ajustado
+        width=800,  # Ajustado para mejor visualización
+        height=600   # Ajustado
     )
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
@@ -167,20 +162,22 @@ def show_section2():
             unsafe_allow_html=True
         )
 
+
 def random_origin_dest():
     """Elige aleatoriamente origen y destino (multiselect)."""
     import random
     classes = list(CLASS_TO_QUINTILES.keys())
     # Elegimos 1..2 clases al azar para origen
-    n_orig = random.randint(1,2)
+    n_orig = random.randint(1, 2)
     origin = random.sample(classes, n_orig)
 
     # Elegimos 1..2 clases al azar para destino
-    n_dest = random.randint(1,2)
+    n_dest = random.randint(1, 2)
     dest = random.sample(classes, n_dest)
 
     st.session_state["origin_default"] = origin
     st.session_state["dest_default"]   = dest
+
 
 def add_cohort_5y_column(df, base_year=2017, step=3):
     def assign_cohort_5y(row_age):
@@ -194,10 +191,12 @@ def add_cohort_5y_column(df, base_year=2017, step=3):
     df['cohort_5y'] = df['p05h'].apply(assign_cohort_5y)
     return df
 
+
 def get_lower_year(cohort_str):
     if cohort_str == "NA" or pd.isna(cohort_str):
         return None
     return int(cohort_str.split('-')[0])
+
 
 def apply_filter_except_generation(df):
     """
@@ -214,6 +213,7 @@ def apply_filter_except_generation(df):
         if chosen_cats:
             dff = dff[dff[var].isin(chosen_cats)]
     return dff
+
 
 def create_label_column(df):
     """
