@@ -18,20 +18,19 @@ CLASS_TO_QUINTILES = {
 
 def show_section3():
     """
-    Sección 3: Predicción de modelo con un sistema de toggles (0/1) a través de
-    botones con emojis (🔴/🟢). El usuario primero configura todas las variables
-    y luego presiona "Procesar" para generar la predicción.
+    Sección 3: Un formulario con checkboxes (0/1) dispuestos en 5 columnas x N filas.
+    El formulario solo se procesa al pulsar "Procesar", evitando recargas continuas.
     """
 
     st.title("Modelo de Clasificación con Probabilidades")
 
-    # Ruta del modelo entrenado (ajusta a tu carpeta, p.e. 'models/')
+    # Ruta del modelo (ajusta si lo guardaste en otra parte)
     modelo_path = 'models/modelo_entrenado.joblib'
     if not os.path.exists(modelo_path):
-        st.error(f"No se encontró el archivo de modelo '{modelo_path}'. Asegúrate de que exista.")
+        st.error(f"No se encontró el archivo de modelo '{modelo_path}'.")
         return
 
-    # Cargar el modelo en session_state (para no recargarlo tras cada interacción)
+    # Cargar el modelo en session_state para no recargarlo en cada submit
     if 'modelo_regr' not in st.session_state:
         regr = joblib.load(modelo_path)
         st.session_state['modelo_regr'] = regr
@@ -39,10 +38,10 @@ def show_section3():
     else:
         regr = st.session_state['modelo_regr']
 
-    # Diccionario de variables: {variable: descripción}
+    # Diccionario de variables (hasta 10, 15, etc.) {variable: descripción}
     variables = {
         'p126d': 'Horno de microondas',
-        'p131':  'Automóvil(es) propio(s)',
+        'p131':  'Automóvil propio',
         'p125d': 'Calentador de agua',
         'p126o': 'Computadora',
         'p126f': 'Tostador de pan',
@@ -53,67 +52,71 @@ def show_section3():
         'p126b': 'Lavadora de ropa'
     }
 
-    st.caption("Pulsa en cada botón para alternar entre **🔴 (0)** y **🟢 (1)**. Luego presiona **Procesar**.")
+    st.caption("Marca un checkbox si la variable vale 1 (verde), desmarca para 0 (rojo). " 
+               "Luego pulsa **Procesar** para generar la predicción.")
 
-    # ----------------------------------------------------------------------------------
-    # 1) Mostrar los toggles (emoji-rojo/verde) en una rejilla de 5 columnas
-    # ----------------------------------------------------------------------------------
-    keys_list = list(variables.keys())
-    num_vars = len(keys_list)
-    cols_per_row = 5
+    # --------------------------------------------------------------------------------
+    # 1) Creamos el FORMULARIO, para que no haya recargas en cada clic de checkbox
+    # --------------------------------------------------------------------------------
+    with st.form("form_variables"):
+        # --- Dibujamos en filas de 5 columnas ---
+        keys_list = list(variables.keys())
+        num_vars = len(keys_list)
+        cols_per_row = 5
 
-    # Asegurar valores en session_state para cada variable (por defecto 0)
-    for var in variables:
-        if var not in st.session_state:
-            st.session_state[var] = 0  # 0 = 🔴, 1 = 🟢
+        # Diccionario que guardará temporalmente los valores
+        user_values = {}
 
-    # Dibujar filas de 5 columnas con botones
-    for start_idx in range(0, num_vars, cols_per_row):
-        row_vars = keys_list[start_idx:start_idx+cols_per_row]
-        col_objs = st.columns(len(row_vars))
+        # Recorremos las variables en bloques de 5
+        for start_idx in range(0, num_vars, cols_per_row):
+            row_vars = keys_list[start_idx:start_idx+cols_per_row]
+            col_objs = st.columns(len(row_vars))
 
-        for i, var in enumerate(row_vars):
-            current_val = st.session_state[var]
-            label_emoji = "🔴" if current_val == 0 else "🟢"
-            desc = variables[var]
+            for i, var in enumerate(row_vars):
+                desc = variables[var]
+                # Con checkbox, True -> 1, False -> 0
+                # st.checkbox dev. True/False
+                val_checkbox = col_objs[i].checkbox(
+                    label=desc,  # Texto pequeño
+                    value=False,  # Por defecto
+                    help=f"Variable: {var}\n(Desmarcado=0, Marcado=1)"
+                )
+                user_values[var] = 1 if val_checkbox else 0
 
-            # El botón alterna de 0 a 1 y viceversa
-            if col_objs[i].button(
-                label_emoji,
-                key=f"toggle_{var}",
-                help=f"{var}: {desc}\n\nPulsa para cambiar a {'1' if current_val == 0 else '0'}",
-            ):
-                st.session_state[var] = 1 - st.session_state[var]
+        # Botón que envía el formulario
+        procesar = st.form_submit_button("Procesar")
 
-    st.write("---")
+    # --------------------------------------------------------------------------------
+    # 2) Tras pulsar "Procesar", generamos la predicción
+    # --------------------------------------------------------------------------------
+    if procesar:
+        # Convertimos user_values en DataFrame
+        df_usuario = pd.DataFrame([user_values])
 
-    # ----------------------------------------------------------------------------------
-    # 2) Botón "Procesar" para generar la predicción y la gráfica
-    # ----------------------------------------------------------------------------------
-    if st.button("Procesar", key="procesar_modelo"):
-        # Construir DataFrame con los valores de session_state
-        df_usuario = pd.DataFrame([{var: st.session_state[var] for var in variables}])
-
-        # Asegurar orden de features
+        # Orden de las features según el modelo
         if hasattr(regr, 'feature_names_in_'):
             modelo_feats = list(regr.feature_names_in_)
         else:
             modelo_feats = list(variables.keys())
 
-        # Asegurar que todas las columnas existan
+        # Validación: si hay mismatch
         for feat in modelo_feats:
             if feat not in df_usuario.columns:
                 df_usuario[feat] = 0
 
         df_usuario = df_usuario[modelo_feats]
 
-        # Verificar predict_proba
+        # Verificamos si soporta predict_proba
         if hasattr(regr, "predict_proba"):
-            probabilidades = regr.predict_proba(df_usuario)  # (1, n_classes)
+            probabilidades = regr.predict_proba(df_usuario)
             clases = regr.classes_
             probs = probabilidades[0]
 
-            df_plot = pd.DataFrame({'Clase': clases, 'Probabilidad': probs})
+            df_plot = pd.DataFrame({
+                'Clase': clases,
+                'Probabilidad': probs
+            })
+
             fig = px.bar(
                 df_plot,
                 x='Clase',
@@ -123,7 +126,10 @@ def show_section3():
                 color='Clase',
                 title="Probabilidades de Predicción para Cada Clase"
             )
-            fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+            fig.update_traces(
+                texttemplate='%{text:.2f}',
+                textposition='outside'
+            )
             fig.update_layout(
                 yaxis=dict(title='Probabilidad'),
                 xaxis=dict(title='Clases'),
@@ -136,14 +142,11 @@ def show_section3():
             idx_pred = np.argmax(probs)
             clase_pred = clases[idx_pred]
             prob_pred = probs[idx_pred]
-            st.markdown(f"**Clase predicha:** `{clase_pred}` con **{prob_pred:.2%}** de probabilidad.")
-
+            st.markdown(f"**Clase predicha:** `{clase_pred}` con **{prob_pred:.2%}** de prob.")
         else:
             st.warning("El modelo no soporta 'predict_proba'. Usa un modelo de clasificación con esta funcionalidad.")
-
     else:
-        st.info("Cuando hayas terminado de ajustar los toggles, presiona **Procesar** para ver la predicción.")
-
+        st.info("Ajusta las variables (check=1, sin check=0) y pulsa **Procesar** para ver el resultado.")
 
 
 def random_origin_dest():
