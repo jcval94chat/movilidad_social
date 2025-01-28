@@ -6,3 +6,4 @@ pyreadstat
 seaborn
 plotly
 joblib
+sklearn
