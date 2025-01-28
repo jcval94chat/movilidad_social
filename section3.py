@@ -33,18 +33,18 @@ def show_section3():
         regr = st.session_state['modelo_regr']
 
     # Variables que el usuario marcará (0/1)
-    variables = {
-        'p126d': 'Horno de microondas',
-        'p131':  'Automóvil propio',
-        'p125d': 'Calentador de agua',
-        'p126o': 'Computadora',
-        'p126f': 'Tostador de pan',
-        'p126g': 'Aspiradora',
-        'p125e': 'Servicio doméstico',
-        'p129a': 'Otra casa/depto',
-        'p126h': 'DVD/Blu-Ray',
-        'p126b': 'Lavadora'
-    }
+    # variables = {
+    #     'p126d': 'Horno de microondas',
+    #     'p131':  'Automóvil propio',
+    #     'p125d': 'Calentador de agua',
+    #     'p126o': 'Computadora',
+    #     'p126f': 'Tostador de pan',
+    #     'p126g': 'Aspiradora',
+    #     'p125e': 'Servicio doméstico',
+    #     'p129a': 'Otra casa/depto',
+    #     'p126h': 'DVD/Blu-Ray',
+    #     'p126b': 'Lavadora'
+    # }
 
     variables = {'p126d': 'Microondas',
         'p131': 'Automóvil propio',
@@ -180,4 +180,3 @@ def random_origin_dest():
 
     st.session_state["origin_default"] = origin
     st.session_state["dest_default"]   = dest
-    
