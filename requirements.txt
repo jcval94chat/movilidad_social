@@ -6,4 +6,4 @@ pyreadstat
 seaborn
 plotly
 joblib
-sklearn
+scikit-learn
