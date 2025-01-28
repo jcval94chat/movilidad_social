@@ -3,6 +3,8 @@
 import streamlit as st
 from section1 import show_section1, random_filter_selection as random_section1
 from section2 import show_section2, random_origin_dest as random_section2
+from section3 import show_section3, random_origin_dest as random_section3  # Asegúrate de importar la función correcta
+
 
 def main():
     st.set_page_config(layout="wide")
@@ -24,6 +26,8 @@ def main():
             random_section1()
             # Aplica la lógica de random a Sección 2 (Evolución Temporal)
             random_section2()
+
+            random_section3()
             st.rerun()
 
     # -----------------------------------------------------------------
@@ -34,13 +38,14 @@ def main():
     # -----------------------------------------------------------------
     # TABS
     # -----------------------------------------------------------------
-    tab1, tab2 = st.tabs(["Mov. Baja v Alta", "Evolución Temporal"])
+    tab1, tab2, tab3 = st.tabs(["Movilidad", "Evolución Temporal", "¿Qué clase soy?"])
 
     with tab1:
         show_section1()
-
     with tab2:
         show_section2()
+    with tab3:
+        show_section3()
 
 if __name__ == "__main__":
     main()
