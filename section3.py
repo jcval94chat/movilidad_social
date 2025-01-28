@@ -17,28 +17,22 @@ CLASS_TO_QUINTILES = {
 }
 
 def show_section3():
-    """
-    Sección 3: Un formulario con checkboxes (0/1) dispuestos en 5 columnas x N filas.
-    El formulario solo se procesa al pulsar "Procesar", evitando recargas continuas.
-    """
+    # Quitar título de la sección
+    # st.title("")
 
-    st.title("Modelo de Clasificación con Probabilidades")
-
-    # Ruta del modelo (ajusta si lo guardaste en otra parte)
+    # Cargar el modelo si no está en session_state
     modelo_path = 'models/modelo_entrenado.joblib'
     if not os.path.exists(modelo_path):
         st.error(f"No se encontró el archivo de modelo '{modelo_path}'.")
         return
 
-    # Cargar el modelo en session_state para no recargarlo en cada submit
     if 'modelo_regr' not in st.session_state:
         regr = joblib.load(modelo_path)
         st.session_state['modelo_regr'] = regr
-        st.success("Modelo cargado exitosamente.")
     else:
         regr = st.session_state['modelo_regr']
 
-    # Diccionario de variables (hasta 10, 15, etc.) {variable: descripción}
+    # Variables que el usuario marcará (0/1)
     variables = {
         'p126d': 'Horno de microondas',
         'p131':  'Automóvil propio',
@@ -49,71 +43,98 @@ def show_section3():
         'p125e': 'Servicio doméstico',
         'p129a': 'Otra casa/depto',
         'p126h': 'DVD/Blu-Ray',
-        'p126b': 'Lavadora de ropa'
+        'p126b': 'Lavadora'
     }
 
-    st.caption("Marca un checkbox si la variable vale 1 (verde), desmarca para 0 (rojo). " 
-               "Luego pulsa **Procesar** para generar la predicción.")
+    variables = {'p126d': 'Microondas',
+        'p131': 'Automóvil propio',
+        'p125d': 'Calentador de agua',
+        'p126f': 'Tostador eléctrico de pan',
+        'p126g': 'Aspiradora',
+        'p125e': 'Servicio doméstico',
+        'p129a': 'Otra casa/depto',
+        'p125a': 'Agua entubada',
+        'p126b': 'Lavadora'
+        }
 
-    # --------------------------------------------------------------------------------
-    # 1) Creamos el FORMULARIO, para que no haya recargas en cada clic de checkbox
-    # --------------------------------------------------------------------------------
+    # Mensaje breve
+    st.write("Selecciona y presiona **Procesar**:")
+
+    # Crear un formulario para que no haya recarga en cada click de checkbox
     with st.form("form_variables"):
-        # --- Dibujamos en filas de 5 columnas ---
+        # Dibujamos los checkboxes en filas de 5 columnas
         keys_list = list(variables.keys())
         num_vars = len(keys_list)
         cols_per_row = 5
 
-        # Diccionario que guardará temporalmente los valores
-        user_values = {}
-
-        # Recorremos las variables en bloques de 5
+        # Recorrido en bloques de 5
         for start_idx in range(0, num_vars, cols_per_row):
             row_vars = keys_list[start_idx:start_idx+cols_per_row]
-            col_objs = st.columns(len(row_vars))
+            cols = st.columns(len(row_vars))
 
             for i, var in enumerate(row_vars):
                 desc = variables[var]
-                # Con checkbox, True -> 1, False -> 0
-                # st.checkbox dev. True/False
-                val_checkbox = col_objs[i].checkbox(
-                    label=desc,  # Texto pequeño
-                    value=False,  # Por defecto
-                    help=f"Variable: {var}\n(Desmarcado=0, Marcado=1)"
+                # Checkbox => True/False
+                # No usamos help= para evitar el icono de "?"
+                cols[i].checkbox(
+                    label=desc,
+                    key=f"chk_{var}",
+                    value=False
                 )
-                user_values[var] = 1 if val_checkbox else 0
 
-        # Botón que envía el formulario
+        st.write("")  # Espacio en blanco
+        # Colocar el botón "Procesar" justo aquí, al final del form
         procesar = st.form_submit_button("Procesar")
 
-    # --------------------------------------------------------------------------------
-    # 2) Tras pulsar "Procesar", generamos la predicción
-    # --------------------------------------------------------------------------------
+    # Solo si el usuario pulsa "Procesar"
     if procesar:
-        # Convertimos user_values en DataFrame
-        df_usuario = pd.DataFrame([user_values])
+        # Construimos DataFrame con valores 0/1
+        # (checkbox True => 1, False => 0)
+        datos_usuario = {}
+        for var in variables:
+            # El checkbox se guardó en session_state[f"chk_{var}"]
+            is_checked = st.session_state.get(f"chk_{var}", False)
+            datos_usuario[var] = 1 if is_checked else 0
 
-        # Orden de las features según el modelo
+        df_usuario = pd.DataFrame([datos_usuario])
+
+        # Orden de features
         if hasattr(regr, 'feature_names_in_'):
             modelo_feats = list(regr.feature_names_in_)
         else:
             modelo_feats = list(variables.keys())
 
-        # Validación: si hay mismatch
+        # Asegurar todas las columnas
         for feat in modelo_feats:
             if feat not in df_usuario.columns:
                 df_usuario[feat] = 0
-
         df_usuario = df_usuario[modelo_feats]
 
-        # Verificamos si soporta predict_proba
         if hasattr(regr, "predict_proba"):
             probabilidades = regr.predict_proba(df_usuario)
             clases = regr.classes_
             probs = probabilidades[0]
 
+            # Mapeo 1..5 => texto
+            class_mapping = {
+                1: "Baja Baja",
+                2: "Baja Alta",
+                3: "Media Baja",
+                4: "Media Alta",
+                5: "Alta"
+            }
+            # Convertir clases => texto
+            clases_texto = []
+            for c in clases:
+                if c in class_mapping:
+                    clases_texto.append(class_mapping[c])
+                else:
+                    # Si tu modelo maneja otras clases (ej. 0, 6, etc.)
+                    # las dejamos tal cual
+                    clases_texto.append(str(c))
+
             df_plot = pd.DataFrame({
-                'Clase': clases,
+                'Clase': clases_texto,
                 'Probabilidad': probs
             })
 
@@ -121,33 +142,27 @@ def show_section3():
                 df_plot,
                 x='Clase',
                 y='Probabilidad',
-                range_y=[0,1],
+                range_y=[0, 1],
                 text='Probabilidad',
                 color='Clase',
-                title="Probabilidades de Predicción para Cada Clase"
+                title=""
             )
-            fig.update_traces(
-                texttemplate='%{text:.2f}',
-                textposition='outside'
-            )
+            fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
             fig.update_layout(
                 yaxis=dict(title='Probabilidad'),
-                xaxis=dict(title='Clases'),
+                xaxis=dict(title='Clase'),
                 uniformtext_minsize=8,
                 uniformtext_mode='hide'
             )
-
             st.plotly_chart(fig, use_container_width=True)
 
+            # Clase con mayor probabilidad
             idx_pred = np.argmax(probs)
-            clase_pred = clases[idx_pred]
+            clase_pred = clases_texto[idx_pred]
             prob_pred = probs[idx_pred]
-            st.markdown(f"**Clase predicha:** `{clase_pred}` con **{prob_pred:.2%}** de prob.")
+            st.write(f"Predicción: **{clase_pred}** con {prob_pred:.2%} de probabilidad.")
         else:
-            st.warning("El modelo no soporta 'predict_proba'. Usa un modelo de clasificación con esta funcionalidad.")
-    else:
-        st.info("Ajusta las variables (check=1, sin check=0) y pulsa **Procesar** para ver el resultado.")
-
+            st.warning("El modelo no soporta 'predict_proba'.")
 
 def random_origin_dest():
     """
@@ -165,3 +180,4 @@ def random_origin_dest():
 
     st.session_state["origin_default"] = origin
     st.session_state["dest_default"]   = dest
+    
