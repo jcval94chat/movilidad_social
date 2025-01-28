@@ -114,3 +114,21 @@ def show_section3():
         st.markdown(f"**La clase predicha por el modelo es:** `{clase_predicha}` con una probabilidad de **{probabilidad_predicha:.2%}**")
     else:
         st.warning("El modelo no soporta 'predict_proba'. Usa un modelo de clasificación con esta funcionalidad.")
+
+
+def random_origin_dest():
+    """
+    Elige aleatoriamente 1..2 clases para ORIGEN y 1..2 para DESTINO.
+    Se invoca al dar clic en el botón "Random" en main.py.
+    """
+    import random
+    classes = list(CLASS_TO_QUINTILES.keys())
+    # Origen
+    n_orig = random.randint(1, 2)
+    origin = random.sample(classes, n_orig)
+    # Destino
+    n_dest = random.randint(1, 2)
+    dest   = random.sample(classes, n_dest)
+
+    st.session_state["origin_default"] = origin
+    st.session_state["dest_default"]   = dest
