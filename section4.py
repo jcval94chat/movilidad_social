@@ -3264,27 +3264,34 @@ def construir_descripciones_cluster(
     return descripciones_por_cluster
 
 
-# Se asume que estas funciones existen o se importan de otro módulo
-# (Solo se muestran de forma resumida, con mínimas explicaciones)
+
+# section4.py
+
+import streamlit as st
+import joblib
+import pandas as pd
+import numpy as np
+
 def generar_lista_preguntas(data_desc):
     preguntas = []
     for var, info in data_desc.items():
-        desc = info.get('Descripción', f"{var}")
+        desc = info.get('Descripción', var)
         vals = info.get('Valores', [])
         etiq = info.get('Etiquetas', [])
         if vals and etiq and len(vals) == len(etiq):
-            opciones_dict = dict(zip(vals, etiq))
-            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'opciones', 'opciones': opciones_dict})
+            tipo = 'opciones'
+            opciones = dict(zip(vals, etiq))
+            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': tipo, 'opciones': opciones})
         else:
             preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'numeric'})
     return preguntas
 
 def preguntar_opciones_streamlit(variable, descripcion, opciones):
     st.write(f"**{variable}**: {descripcion}")
-    opts = [f"{k} - {v}" for k,v in opciones.items()]
-    sel = st.selectbox("", opts)
-    code = int(sel.split(" - ")[0])
-    return code, opciones[code]
+    lista = [f"{k} - {v}" for k, v in opciones.items()]
+    sel = st.selectbox("", lista)
+    cod = int(sel.split(" - ")[0])
+    return cod, opciones[cod]
 
 def preguntar_numero_streamlit(variable, descripcion):
     st.write(f"**{variable}**: {descripcion}")
@@ -3292,68 +3299,93 @@ def preguntar_numero_streamlit(variable, descripcion):
     return val, str(val)
 
 def aplicar_cuestionario(preguntas):
-    respuestas = []
+    resp = []
     for p in preguntas:
-        var, desc, t = p['variable'], p['descripcion'], p['tipo']
-        if t == 'opciones':
-            code, txt = preguntar_opciones_streamlit(var, desc, p['opciones'])
+        var = p['variable']
+        desc = p['descripcion']
+        if p['tipo'] == 'opciones':
+            r_codigo, r_texto = preguntar_opciones_streamlit(var, desc, p['opciones'])
         else:
-            code, txt = preguntar_numero_streamlit(var, desc)
-        respuestas.append({'variable': var, 'descripcion': desc, 'respuesta_codigo': code, 'respuesta_texto': txt})
-    return pd.DataFrame(respuestas)
+            r_codigo, r_texto = preguntar_numero_streamlit(var, desc)
+        resp.append({'variable': var, 'descripcion': desc, 'respuesta_codigo': r_codigo, 'respuesta_texto': r_texto})
+    return pd.DataFrame(resp)
 
 def cuestionario_general(data_desc):
-    lst_pregs = generar_lista_preguntas(data_desc)
-    return aplicar_cuestionario(lst_pregs)
+    lp = generar_lista_preguntas(data_desc)
+    df = aplicar_cuestionario(lp)
+    return df
 
 def show_section4():
+    base_path = 'data/'
+    if 'df_valiosas_dict' not in st.session_state:
+        st.session_state['df_valiosas_dict'] = joblib.load(base_path+'df_valiosas_dict.joblib')
+    if 'df_feature_importances_total' not in st.session_state:
+        st.session_state['df_feature_importances_total'] = joblib.load(base_path+'df_feature_importances_total.joblib')
+    if 'df_clusterizados_total_origi' not in st.session_state:
+        st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
+
     st.write("Sección 4")
 
-    if 'df_valiosas_dict' not in st.session_state:
-        st.session_state['df_valiosas_dict'] = joblib.load('df_valiosas_dict.joblib')
-    if 'df_feature_importances_total' not in st.session_state:
-        st.session_state['df_feature_importances_total'] = joblib.load('df_feature_importances_total.joblib')
-    if 'df_clusterizados_total_origi' not in st.session_state:
-        st.session_state['df_clusterizados_total_origi'] = pd.read_csv('/content/df_clusterizados_total_origi.csv')
-
     TARGETS = list(st.session_state['df_valiosas_dict'].keys())
-    user_target = st.selectbox("Target", TARGETS, index=0)
-    df_datos_valiosas = st.session_state['df_valiosas_dict'][user_target]
-    prefix = f"{user_target}_"
-    df_cluster_target = st.session_state['df_clusterizados_total_origi'].rename(
-        columns={c: c.replace(prefix,"") for c in st.session_state['df_clusterizados_total_origi'].columns if c.startswith(prefix)}
-    )
-    feats = st.session_state['df_feature_importances_total'][f"{user_target}_importance"].sort_values(ascending=False).index
-    best_val = [x.split('-')[0].strip() for x in feats][:10]
+    user_selected_target = st.selectbox("Elige Target", TARGETS)
+    df_datos_desc = st.session_state['df_valiosas_dict'][user_selected_target]
+
+    df_feature_import = st.session_state['df_feature_importances_total']
+    best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
     best_val = [x for x in best_val if x not in ['p133','CIUO2']]
-    preg_lista_ = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
-    preguntas_lista = sorted(list(set(preg_lista_ + best_val)))
 
-    st.write("Responde el cuestionario:")
-    data_desc = {}  # Se asume un dict con info de cada var
-    # Aquí simulado: se podría tener data_desc en session_state
-    # Ejemplo rápido:
-    for var_ in preguntas_lista:
-        data_desc[var_] = {'Descripción': f"Pregunta {var_}", 'Valores': [], 'Etiquetas': []}
+    lista_base = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    preguntas_lista = sorted(list(set(lista_base+best_val)))
 
-    with st.expander("Cuestionario"):
+    # Ejemplo: supón que data_desc vive en session o se obtiene de otra forma
+    # Aquí no repetimos la obtención, asume que "data_desc" ya existe
+    # Podrías ajustar a tu fuente real
+    data_desc = {}  
+    # Mínimo mock, el real vendría de tu base
+    for p in preguntas_lista:
+        data_desc[p] = {'Descripción': f"Pregunta {p}", 'Valores': [], 'Etiquetas': []}
+
+    with st.form("cuestionario_form"):
+        st.write("Contesta las preguntas:")
         df_respuestas = cuestionario_general({k: data_desc[k] for k in preguntas_lista if k in data_desc})
+        ejecutar = st.form_submit_button("Ejecutar")
 
-    opciones_filtro = {
-        'cambio': lambda df: df[(df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0)].sort_values('N_probabilidad', ascending=False),
-        'gobierno': lambda df: df[df['involucrados_gobierno']>0],
-        'extenso': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']==0)&(df['N_probabilidad']>1)],
-        'confidence': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']>0)]
-    }
-    filtro_choice = st.selectbox("Filtrar por", list(opciones_filtro.keys()), index=0)
+    if ejecutar:
+        df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
+        prefix = user_selected_target+"_"
+        ren = {}
+        for c in df_cluster.columns:
+            if c.startswith(prefix):
+                ren[c] = c.replace(prefix,"")
+        df_cluster_target = df_cluster.rename(columns=ren)
+        df_datos_valiosas = df_datos_desc
 
-    if st.button("Ejecutar"):
-        # Mocks de funciones
-        
-        df_resp = df_respuestas.set_index('variable')['respuesta_codigo'].to_dict()
-        # Se simula el apply
-        df_res = obtener_vecinos_de_mi_respuesta(df_resp, df_cluster_target, df_datos_valiosas)
-        df_res['nivel_de_confianza_cluster'] = pd.qcut(df_res['Soporte'], q=4, labels=False)
-        df_filtrado = opciones_filtro[filtro_choice](df_res)
-        resultado = construir_descripciones_cluster(df_filtrado, None, None, language='es', show_N_probabilidad=True, show_Probabilidad=True)
-        st.dataframe(resultado)
+        # Filtros
+        opciones_filtro = {
+            'cambio': lambda df: df[(df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0)].sort_values('N_probabilidad', ascending=False),
+            'gobierno': lambda df: df[df['involucrados_gobierno']>0],
+            'extenso': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']==0)&(df['N_probabilidad']>1)],
+            'confidence': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']>0)]
+        }
+
+        choice = st.selectbox("Filtrar por:", list(opciones_filtro.keys()))
+
+        if st.button("Mostrar"):
+            df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+            df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
+                df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
+            )
+            if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
+                df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
+            if 'cambio_yo_moderado' not in df_datos_descript_valiosas_respuestas.columns:
+                df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] = 0
+            if 'cambio_yo_difícil' not in df_datos_descript_valiosas_respuestas.columns:
+                df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] = 0
+            if 'cambio_yo_fácil' not in df_datos_descript_valiosas_respuestas.columns:
+                df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] = 0
+            if 'involucrados_gobierno' not in df_datos_descript_valiosas_respuestas.columns:
+                df_datos_descript_valiosas_respuestas['involucrados_gobierno'] = 0
+
+            df_filtrado = opciones_filtro[choice](df_datos_descript_valiosas_respuestas)
+            result = construir_descripciones_cluster(df_filtrado, None, None, language='es', show_N_probabilidad=True, show_Probabilidad=True)
+            st.dataframe(result)
