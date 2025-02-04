@@ -1947,7 +1947,7 @@ def get_data_desc():
         "p151": {
             "Descripción": "¿Cuál considera que es el color de piel de su cara?",
             "Valores": list(range(1, 12)),
-            "Etiquetas": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
+            "Etiquetas": ["⬛A", "B", "👍🏿C", "D", "👍🏾E", "👍🏽F", "G", "👍🏼H", "I", "👍🏻J", "⬜K"]
         },
         "region": {
             "Descripción": "Región del país",
