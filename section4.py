@@ -3695,32 +3695,32 @@ def show_section4():
 
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
-    best_val = [x for x in best_val if x not in ['p133', 'CIUO2']]
+    best_val = [x for x in best_val if x not in ['p133','CIUO2']]
 
-    base_pregs = ['p05', 'p86', 'p33_f', 'p43', 'p43m', 'p13', 'p98', 'p151', 'p64']
-    preguntas_lista = sorted(list(set(base_pregs + best_val)))
+    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
-    # data_desc_real vendría de get_data_desc() y tiene la información completa de cada variable.
+    # data_desc_global se obtiene de get_data_desc() y contiene la información completa de cada variable
     data_desc_global = get_data_desc()
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
     st.write("Contesta el cuestionario:")
 
-    # --- Sección del formulario: se muestran 3 preguntas por renglón ---
+    # Se muestra el formulario con 3 preguntas por renglón, usando selectbox en lugar de checkboxes o radio.
     with st.form("cuestionario_form"):
         responses = {}
-        # Convertimos data_desc_usable en una lista de (clave, datos) para iterar ordenadamente.
+        # Convertimos data_desc_usable en una lista para iterar de forma ordenada.
         questions = list(data_desc_usable.items())
         cols_per_row = 3
         for i in range(0, len(questions), cols_per_row):
             cols = st.columns(cols_per_row)
             for col, (q_key, q_data) in zip(cols, questions[i:i+cols_per_row]):
-                # Se usa el valor de "Descripción" en lugar del nombre de la variable.
+                # Se muestra la "Descripción" en lugar del nombre de la variable.
                 question_text = q_data.get("Descripción", q_key)
-                # Si se definen opciones en "Etiquetas", se utilizan; de lo contrario, se muestra un campo de texto.
+                # Si existen opciones definidas en "Etiquetas", se utiliza un selectbox.
                 opciones = q_data.get("Etiquetas", [])
                 if opciones:
-                    responses[q_key] = col.radio(label=question_text, options=opciones)
+                    responses[q_key] = col.selectbox(label=question_text, options=opciones)
                 else:
                     responses[q_key] = col.text_input(label=question_text)
         ejecutar = st.form_submit_button("Ejecutar")
@@ -3734,29 +3734,28 @@ def show_section4():
             q=4, labels=False
         )
         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1, 5, size=len(df_datos_descript_valiosas_respuestas))
+            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
 
         # Filtrado por defecto: se conservan las filas con alguna medida de cambio y con nivel de confianza > 0.
         df_filtrado = df_datos_descript_valiosas_respuestas[
-            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] > 0) |
-             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
-             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
-            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
+            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
+            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
         ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
 
         nuevo_diccionario = get_nuevo_diccionario()
 
         resultado = construir_descripciones_cluster(
-            df_filtrado,
-            data_desc_global,
-            nuevo_diccionario,
-            language='es',
-            show_N_probabilidad=True,
+            df_filtrado, 
+            data_desc_global, 
+            nuevo_diccionario, 
+            language='es', 
+            show_N_probabilidad=True, 
             show_Probabilidad=True
         )
 
-        # Se muestran los resultados.
-        # Se imprimen cada descripción individualmente y en bloque.
+        # Mostrar los resultados:
         for cluster_id, descripcion in resultado.items():
             st.write(descripcion)
         st.write("\n\n".join(resultado.values()))
