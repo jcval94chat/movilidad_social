@@ -3748,6 +3748,174 @@ def cuestionario_general(data_desc, cols_per_row=3):
     return df
 
 
+def get_color_for_increment(diff):
+    """
+    Retorna un color (en formato hexadecimal) que varía de rojo a verde según el valor diff.
+    Se asume que diff está en un rango aproximado de -0.5 a 0.5.
+    """
+    min_diff, max_diff = -0.5, 0.5
+    clamped = max(min_diff, min(max_diff, diff))
+    # Factor de interpolación: 0 para diff=min_diff (rojo) y 1 para diff=max_diff (verde)
+    t = (clamped - min_diff) / (max_diff - min_diff)
+    r = int((1-t) * 255)
+    g = int(t * 255)
+    b = 0
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+def map_confidence(value):
+    """
+    Mapea un valor numérico de confianza a un texto descriptivo.
+    Puedes ajustar estos límites según tus necesidades.
+    """
+    try:
+        val = float(value)
+    except:
+        return value
+    if val <= 0:
+        return "Baja"
+    elif val == 1:
+        return "Media"
+    elif val == 2:
+        return "Alta"
+    else:  # para 3 o más
+        return "Muy Alta"
+
+
+
+def format_cluster_description(raw_desc):
+    """
+    Recibe la descripción cruda de un cluster (string con saltos de línea)
+    y retorna una versión formateada y más concisa según el ejemplo esperado.
+    
+    Se asume que el string original tiene secciones similares a:
+    
+      **Cluster 4**
+      - Incremento de probabilidad respecto a la media: 0.97
+      - Probabilidad: 1.2%
+      - Nivel de confianza (Baja:0, Alta 3): 2.0
+      - Descripción original: … (se ignora)
+      - Variables y rangos:
+        - Variable: p128b
+          - Descripción: Servicios financieros: cuenta ahorro
+          - Rango: 0.0 a 1.5
+          - Categorías en rango: 1=Sí
+            - ¿Puedo cambiarlo yo?: fácil
+            - ¿Puede cambiarlo el gobierno?: no_aplica
+            - Involucrados: yo
+            - Recursos: Tiempo, Conocimiento, Dinero
+        - Variable: p06
+          - Descripción: Sexo
+          - Rango: 0.0 a 1.5
+          - Categorías en rango: 1=Hombre
+            - ¿Puedo cambiarlo yo?: imposible
+            - ¿Puede cambiarlo el gobierno?: no_aplica
+            - Involucrados: yo
+            - Recursos: no_aplica
+    """
+    lines = raw_desc.split("\n")
+    summary_lines = []
+    variables_lines = []
+    in_variables_section = False
+    current_var_block = []
+    var_blocks = []
+    
+    for line in lines:
+        stripped = line.strip()
+        # Detectar el inicio de la sección de variables
+        if stripped.startswith("- Variables y rangos:"):
+            in_variables_section = True
+            continue
+
+        if not in_variables_section:
+            # Procesar las líneas del resumen (antes de Variables)
+            if stripped.startswith("- Incremento de probabilidad"):
+                try:
+                    # Extraer el valor numérico (ejemplo: "0.97")
+                    incremento = float(stripped.split(":",1)[1].strip())
+                    diff = incremento - 1.0  # diferencia respecto a 1
+                    diff_percent = diff * 100  # en porcentaje
+                    color = get_color_for_increment(diff)
+                    # Se usa HTML para aplicar color
+                    summary_lines.append(f'<span style="color:{color};font-weight:bold;">Incremento: {diff_percent:+.0f}%</span>')
+                except Exception as e:
+                    summary_lines.append(stripped)
+            elif stripped.startswith("- Probabilidad:"):
+                prob = stripped.split(":",1)[1].strip()
+                summary_lines.append(f"Probabilidad: {prob}")
+            elif stripped.startswith("- Nivel de confianza"):
+                try:
+                    conf_val = stripped.split(":",1)[1].strip()
+                    conf_text = map_confidence(conf_val)
+                    summary_lines.append(f"Confianza {conf_text}")
+                except:
+                    summary_lines.append(stripped)
+            # Se ignoran otras líneas como el título del cluster o la descripción original
+        else:
+            # Acumulamos las líneas correspondientes a cada variable.
+            # Cada bloque de variable empieza con "- Variable:" (con algún nivel de indentación)
+            if stripped.startswith("- Variable:"):
+                if current_var_block:
+                    var_blocks.append(current_var_block)
+                    current_var_block = []
+                current_var_block.append(stripped)
+            else:
+                if current_var_block:
+                    current_var_block.append(stripped)
+    if current_var_block:
+        var_blocks.append(current_var_block)
+    
+    # Procesar cada bloque de variable para extraer los datos relevantes
+    for block in var_blocks:
+        var_info = {}   # contendrá 'descripcion' y 'categorias'
+        extra_props = []  # lista de propiedades extra a mostrar
+        for line in block:
+            if line.startswith("- Variable:"):
+                # Si necesitas el código de la variable, lo puedes extraer aquí.
+                var_info["codigo"] = line.split(":",1)[1].strip()
+            elif line.startswith("- Descripción:"):
+                var_info["descripcion"] = line.split(":",1)[1].strip()
+            elif line.startswith("- Categorías en rango:"):
+                cat_str = line.split(":",1)[1].strip()
+                # Se separan las posibles múltiples categorías (por ejemplo "1=Sí, 2=No")
+                cats = []
+                for part in cat_str.split(","):
+                    if "=" in part:
+                        cat_val = part.split("=",1)[1].strip()
+                        cats.append(cat_val)
+                var_info["categorias"] = ", ".join(cats)
+            elif line.startswith("- ¿Puedo cambiarlo yo?:"):
+                val = line.split(":",1)[1].strip()
+                if val.lower() != "no_aplica":
+                    extra_props.append(f"¿Puedo cambiarlo yo?: {val}")
+            elif line.startswith("- Involucrados:"):
+                val = line.split(":",1)[1].strip()
+                if val.lower() != "no_aplica":
+                    extra_props.append(f"Involucrados: {val}")
+            elif line.startswith("- Recursos:"):
+                val = line.split(":",1)[1].strip()
+                if val.lower() != "no_aplica":
+                    extra_props.append(f"Recursos: {val}")
+            # Se ignoran líneas como "- ¿Puede cambiarlo el gobierno?: ..."  
+        # Solo si tenemos descripción y categoría, armamos la salida
+        if "descripcion" in var_info and "categorias" in var_info:
+            variables_lines.append(f"- {var_info['descripcion']} -> {var_info['categorias']}")
+            for prop in extra_props:
+                variables_lines.append(f"    - {prop}")
+    
+    # Unir las secciones y retornar el string formateado
+    formatted = "\n".join(summary_lines) + "\n\n" + "\n\n".join(variables_lines)
+    return formatted
+
+def format_all_clusters(resultado):
+    """
+    Recibe un diccionario (cluster_id -> descripción cruda) y retorna otro diccionario
+    con la misma llave pero con la descripción formateada.
+    """
+    formatted_result = {}
+    for cluster_id, desc in resultado.items():
+        formatted_result[cluster_id] = format_cluster_description(desc)
+    return formatted_result
+
 
 
 def show_section4():
@@ -3838,8 +4006,16 @@ def show_section4():
             show_N_probabilidad=True, 
             show_Probabilidad=True
         )
-
+        
         # Mostrar los resultados:
-        for cluster_id, descripcion in resultado.items():
-            st.write(descripcion)
-        st.write("\n\n".join(resultado.values()))
+        # for cluster_id, descripcion in resultado.items():
+        #     st.write(descripcion)
+        # st.write("\n\n".join(resultado.values()))
+
+
+        formatted_resultado = format_all_clusters(resultado)
+
+        st.write("### Resultados:")
+        # Se usa st.markdown con unsafe_allow_html=True para aplicar el estilo en el incremento
+        for cluster_id, desc in formatted_resultado.items():
+            st.markdown(desc, unsafe_allow_html=True)
