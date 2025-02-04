@@ -3672,83 +3672,93 @@ def cuestionario_general(data_desc):
 
 
 
-
 def show_section4():
+    import joblib
+    import pandas as pd
+    import numpy as np
+    import streamlit as st
+
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
-        st.session_state['df_valiosas_dict'] = joblib.load(base_path+'df_valiosas_dict.joblib')
+        st.session_state['df_valiosas_dict'] = joblib.load(base_path + 'df_valiosas_dict.joblib')
     if 'df_feature_importances_total' not in st.session_state:
-        st.session_state['df_feature_importances_total'] = joblib.load(base_path+'df_feature_importances_total.joblib')
+        st.session_state['df_feature_importances_total'] = joblib.load(base_path + 'df_feature_importances_total.joblib')
     if 'df_clusterizados_total_origi' not in st.session_state:
-        st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
+        st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path + 'df_clusterizados_total_origi.csv')
 
     st.write("Sección 4")
 
     TARGETS = list(st.session_state['df_valiosas_dict'].keys())
     user_selected_target = st.selectbox("Target", TARGETS, index=0)
 
+    # Extraer las columnas de cluster para el target seleccionado y quitar el prefijo
     prefix = f"{user_selected_target}_"
     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
-    rename_map = {}
-    for c in df_cluster.columns:
-        if c.startswith(prefix):
-            rename_map[c] = c.replace(prefix,"")
+    rename_map = {c: c.replace(prefix, "") for c in df_cluster.columns if c.startswith(prefix)}
     df_cluster_target = df_cluster.rename(columns=rename_map)
 
+    # Seleccionar las 10 variables con mayor importancia, descartando algunas
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
-    best_val = [x for x in best_val if x not in ['p133','CIUO2']]
+    best_val = [x for x in best_val if x not in ['p133', 'CIUO2']]
 
-    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    base_pregs = ['p05', 'p86', 'p33_f', 'p43', 'p43m', 'p13', 'p98', 'p151', 'p64']
     preguntas_lista = sorted(list(set(base_pregs + best_val)))
 
-    # data_desc_global vendría de get_data_desc() y contiene la descripción completa de cada pregunta.
+    # data_desc_global vendría de get_data_desc() y tiene la información completa.
     data_desc_global = get_data_desc()
+    # Se filtra para quedarse solo con las preguntas de interés
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
     st.write("Contesta el cuestionario:")
 
-    # --- Formulario de cuestionario adaptado ---
+    # --- Aquí se muestra el cuestionario: 2 preguntas por renglón,
+    #      usando únicamente la descripción y mostrando el texto en un recuadro.
     with st.form("cuestionario_form"):
-        responses = {}
-        # Creamos 3 columnas para colocar 3 preguntas por renglón
-        cols = st.columns(3)
-        # Recorremos las preguntas en el orden definido en preguntas_lista
-        for i, q in enumerate(preguntas_lista):
-            # Se usa el índice para elegir la columna (se reinicia cada 3 preguntas)
-            col = cols[i % 3]
-            with col:
-                # Se muestra la descripción dentro de un recuadro (HTML con fondo gris claro)
-                st.markdown(
-                    f"<div style='background-color:#f5f5f5; padding:8px; border-radius:5px;'>"
-                    f"{data_desc_usable[q]}"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
-                # Se coloca un input de texto sin etiqueta, usando la descripción como placeholder
-                responses[q] = st.text_input("", key=f"question_{q}")
+        responses = {}  # aquí se guardarán las respuestas, con la llave de la pregunta
+        question_keys = list(data_desc_usable.keys())
+        # Ordenamos las preguntas (opcional)
+        question_keys.sort()
+        # Iteramos de 2 en 2 para formar renglones de 2 columnas
+        for i in range(0, len(question_keys), 2):
+            cols = st.columns(2)
+            for j in range(2):
+                if i + j < len(question_keys):
+                    q_key = question_keys[i + j]
+                    # Se obtiene la descripción; si data_desc_usable[q_key] es un dict y tiene 'Descripción'
+                    if isinstance(data_desc_usable[q_key], dict) and "Descripción" in data_desc_usable[q_key]:
+                        description_text = data_desc_usable[q_key]["Descripción"]
+                    else:
+                        description_text = str(data_desc_usable[q_key])
+                    # Se muestra la descripción en un recuadro (estilo de fondo gris claro)
+                    cols[j].markdown(
+                        f"<div style='background-color: #f0f0f0; padding: 8px; border-radius: 4px;'>{description_text}</div>",
+                        unsafe_allow_html=True
+                    )
+                    # Se coloca el campo de respuesta sin etiqueta, con placeholder vacío.
+                    responses[q_key] = cols[j].text_input("", "")
         ejecutar = st.form_submit_button("Ejecutar")
-        df_respuestas = responses  # Simulamos que este diccionario será el resultado del cuestionario
 
     if ejecutar:
+        # Obtener los vecinos (la función asume que se utilizan df_cluster_target y el df de valiosas)
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
-        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(
+            responses, df_cluster_target, df_datos_valiosas
+        )
         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
             df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
         )
         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
             df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1, 5, size=len(df_datos_descript_valiosas_respuestas))
 
-        # Filtrado por defecto: se toman aquellos que tienen al menos algún cambio y nivel de confianza > 0
+        # Filtrado por defecto: se toma solo el subconjunto con indicadores de cambio y nivel de confianza > 0
         df_filtrado = df_datos_descript_valiosas_respuestas[
             ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] > 0) |
              (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
              (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
             (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in 
-                 ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) \
-          else df_datos_descript_valiosas_respuestas
-        
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
+
         nuevo_diccionario = get_nuevo_diccionario()
 
         resultado = construir_descripciones_cluster(
@@ -3760,5 +3770,5 @@ def show_section4():
             show_Probabilidad=True
         )
 
-        # Mostrar las descripciones resultantes
+        # Se muestran los resultados: se unen todas las descripciones en un solo bloque
         st.write("\n\n".join(resultado.values()))
