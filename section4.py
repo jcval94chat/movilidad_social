@@ -9,6 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 
 
+# section4.py
+import uuid
+import streamlit as st
 def get_data_desc():
     data_desc = {
         "folio": {
@@ -2896,57 +2899,57 @@ def preguntar_numero_streamlit(variable, descripcion):
 # Función principal que aplica el cuestionario
 # ================================
 
-def aplicar_cuestionario(preguntas, front='console', st=None):
-    """
-    Aplica cada pregunta de la lista 'preguntas' usando 'front' (console o streamlit).
-    Retorna una lista de respuestas, cada respuesta es un dict:
-    {
-      'variable': ...,
-      'descripcion': ...,
-      'respuesta_codigo': ...,
-      'respuesta_texto': ...
-    }
+# def aplicar_cuestionario(preguntas, front='console', st=None):
+#     """
+#     Aplica cada pregunta de la lista 'preguntas' usando 'front' (console o streamlit).
+#     Retorna una lista de respuestas, cada respuesta es un dict:
+#     {
+#       'variable': ...,
+#       'descripcion': ...,
+#       'respuesta_codigo': ...,
+#       'respuesta_texto': ...
+#     }
 
-    Parámetros:
-    -----------
-    - preguntas: lista de dicts con la estructura generada por generar_lista_preguntas.
-    - front: 'console' (por defecto) o 'streamlit'.
-    - st: referencia al módulo streamlit (solo si front='streamlit').
-    """
-    respuestas = []
+#     Parámetros:
+#     -----------
+#     - preguntas: lista de dicts con la estructura generada por generar_lista_preguntas.
+#     - front: 'console' (por defecto) o 'streamlit'.
+#     - st: referencia al módulo streamlit (solo si front='streamlit').
+#     """
+#     respuestas = []
 
-    for p in preguntas:
-        variable = p['variable']
-        descripcion = p['descripcion']
-        tipo = p['tipo']
+#     for p in preguntas:
+#         variable = p['variable']
+#         descripcion = p['descripcion']
+#         tipo = p['tipo']
 
-        if tipo == 'opciones':
-            # Tiene 'opciones'
-            opciones = p.get('opciones', {})
-            if front == 'console':
-                r_codigo, r_texto = preguntar_opciones_console(variable, descripcion, opciones)
-            elif front == 'streamlit' and st is not None:
-                r_codigo, r_texto = preguntar_opciones_streamlit(variable, descripcion, opciones, st)
-            else:
-                raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
+#         if tipo == 'opciones':
+#             # Tiene 'opciones'
+#             opciones = p.get('opciones', {})
+#             if front == 'console':
+#                 r_codigo, r_texto = preguntar_opciones_console(variable, descripcion, opciones)
+#             elif front == 'streamlit' and st is not None:
+#                 r_codigo, r_texto = preguntar_opciones_streamlit(variable, descripcion, opciones, st)
+#             else:
+#                 raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
 
-        else:
-            # pregunta numérica
-            if front == 'console':
-                r_codigo, r_texto = preguntar_numero_console(variable, descripcion)
-            elif front == 'streamlit' and st is not None:
-                r_codigo, r_texto = preguntar_numero_streamlit(variable, descripcion, st)
-            else:
-                raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
+#         else:
+#             # pregunta numérica
+#             if front == 'console':
+#                 r_codigo, r_texto = preguntar_numero_console(variable, descripcion)
+#             elif front == 'streamlit' and st is not None:
+#                 r_codigo, r_texto = preguntar_numero_streamlit(variable, descripcion, st)
+#             else:
+#                 raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
 
-        respuestas.append({
-            'variable': variable,
-            'descripcion': descripcion,
-            'respuesta_codigo': r_codigo,
-            'respuesta_texto': r_texto
-        })
+#         respuestas.append({
+#             'variable': variable,
+#             'descripcion': descripcion,
+#             'respuesta_codigo': r_codigo,
+#             'respuesta_texto': r_texto
+#         })
 
-    return respuestas
+#     return respuestas
 
 
 def respuestas_a_dataframe(respuestas):
@@ -3258,52 +3261,48 @@ def construir_descripciones_cluster(
 
     return descripciones_por_cluster
 
+def preguntar_numero_streamlit(i, variable, descripcion):
+    unique_id = f"num_{variable}_{i}_{uuid.uuid4()}"
+    st.write(f"**{variable}**: {descripcion}")
+    val = st.number_input(
+        label=f"Numerical_{variable}_{i}",
+        label_visibility="collapsed",
+        value=0.0,
+        step=1.0,
+        key=unique_id
+    )
+    return val, str(val)
 
-
-# section4.py
-
-import streamlit as st
-import joblib
-import pandas as pd
-import numpy as np
-
-def generar_lista_preguntas(data_desc):
-    preguntas = []
-    for var, info in data_desc.items():
-        desc = info.get('Descripción', var)
-        vals = info.get('Valores', [])
-        etiq = info.get('Etiquetas', [])
-        if vals and etiq and len(vals) == len(etiq):
-            tipo = 'opciones'
-            opciones = dict(zip(vals, etiq))
-            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': tipo, 'opciones': opciones})
-        else:
-            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'numeric'})
-    return preguntas
-
-def preguntar_opciones_streamlit(variable, descripcion, opciones):
+def preguntar_opciones_streamlit(i, variable, descripcion, opciones):
+    unique_id = f"sel_{variable}_{i}_{uuid.uuid4()}"
     st.write(f"**{variable}**: {descripcion}")
     lista = [f"{k} - {v}" for k, v in opciones.items()]
-    sel = st.selectbox("", lista)
+    sel = st.selectbox(
+        label=f"Opciones_{variable}_{i}",
+        label_visibility="collapsed",
+        options=lista,
+        key=unique_id
+    )
     cod = int(sel.split(" - ")[0])
     return cod, opciones[cod]
 
-def preguntar_numero_streamlit(variable, descripcion):
-    st.write(f"**{variable}**: {descripcion}")
-    val = st.number_input("", value=0.0, step=1.0)
-    return val, str(val)
 
 def aplicar_cuestionario(preguntas):
-    resp = []
-    for p in preguntas:
+    respuestas = []
+    for i, p in enumerate(preguntas):
         var = p['variable']
         desc = p['descripcion']
         if p['tipo'] == 'opciones':
-            r_codigo, r_texto = preguntar_opciones_streamlit(var, desc, p['opciones'])
+            r_codigo, r_texto = preguntar_opciones_streamlit(i, var, desc, p['opciones'])
         else:
-            r_codigo, r_texto = preguntar_numero_streamlit(var, desc)
-        resp.append({'variable': var, 'descripcion': desc, 'respuesta_codigo': r_codigo, 'respuesta_texto': r_texto})
-    return pd.DataFrame(resp)
+            r_codigo, r_texto = preguntar_numero_streamlit(i, var, desc)
+        respuestas.append({
+            'variable': var,
+            'descripcion': desc,
+            'respuesta_codigo': r_codigo,
+            'respuesta_texto': r_texto
+        })
+    return pd.DataFrame(respuestas)
 
 def cuestionario_general(data_desc):
     lp = generar_lista_preguntas(data_desc)
