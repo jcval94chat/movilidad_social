@@ -2758,71 +2758,6 @@ def get_data_desc():
     }
     return data_desc
 
-def generar_lista_preguntas(data_desc):
-    """
-    Genera una lista de preguntas de manera automática según la estructura de data_desc.
-    Si la entrada data_desc tiene la forma:
-
-    data_desc['p86'] = {
-        'Descripción': 'Num horas trabaja a la semana',
-        'Valores': [],        # vacío => no hay opciones
-        'Etiquetas': []       # vacío => no hay opciones
-    }
-
-    data_desc['p33_f'] = {
-        'Descripción': 'Artículos hogar (14 años): tostador eléctrico',
-        'Valores': [1, 2, 8],
-        'Etiquetas': ['Sí', 'No', 'NS']
-    }
-
-    Entonces, si 'Valores' y 'Etiquetas' NO están vacíos, creará una pregunta de tipo "opciones".
-    Si están vacíos, creará una pregunta de tipo "numérico".
-
-    Retorna una lista de dicts con la estructura:
-    [
-      {
-        'variable': 'p86',
-        'descripcion': 'Num horas trabaja a la semana',
-        'tipo': 'numeric'  # o 'opciones'
-        'opciones': { ... } # si aplica
-      },
-      ...
-    ]
-    """
-    preguntas = []
-
-    for var, info in data_desc.items():
-        descripcion = info.get('Descripción', f"Pregunta de {var}")
-        valores = info.get('Valores', [])
-        etiquetas = info.get('Etiquetas', [])
-
-        # Decidir tipo de pregunta
-        if valores and etiquetas and len(valores) == len(etiquetas):
-            # Hay opciones
-            tipo_pregunta = 'opciones'
-            # Crear dict {codigo: texto_opcion} para desplegar
-            opciones_dict = {}
-            for cod, etiq in zip(valores, etiquetas):
-                opciones_dict[cod] = etiq
-
-            preguntas.append({
-                'variable': var,
-                'descripcion': descripcion,
-                'tipo': tipo_pregunta,
-                'opciones': opciones_dict
-            })
-
-        else:
-            # No hay opciones (o están desfasadas), se asume pregunta numérica
-            tipo_pregunta = 'numeric'
-            preguntas.append({
-                'variable': var,
-                'descripcion': descripcion,
-                'tipo': tipo_pregunta
-            })
-
-    return preguntas
-
 
 # ================================
 # Funciones para preguntar en consola
@@ -2869,88 +2804,8 @@ def preguntar_numero_console(variable, descripcion):
 
 
 # ================================
-# Funciones para preguntar en Streamlit
-# ================================
-
-def preguntar_opciones_streamlit(variable, descripcion, opciones):
-    st.write(f"**{variable}**: {descripcion}")
-    lista = [f"{k} - {v}" for k, v in opciones.items()]
-    sel = st.selectbox(
-        "", 
-        lista,
-        key=f"sel_{variable}"  # Un key único para cada variable
-    )
-    cod = int(sel.split(" - ")[0])
-    return cod, opciones[cod]
-
-def preguntar_numero_streamlit(variable, descripcion):
-    st.write(f"**{variable}**: {descripcion}")
-    val = st.number_input(
-        "", 
-        value=0.0, 
-        step=1.0,
-        key=f"num_{variable}"  # Un key único para cada variable
-    )
-    return val, str(val)
-
-
-
-# ================================
 # Función principal que aplica el cuestionario
 # ================================
-
-# def aplicar_cuestionario(preguntas, front='console', st=None):
-#     """
-#     Aplica cada pregunta de la lista 'preguntas' usando 'front' (console o streamlit).
-#     Retorna una lista de respuestas, cada respuesta es un dict:
-#     {
-#       'variable': ...,
-#       'descripcion': ...,
-#       'respuesta_codigo': ...,
-#       'respuesta_texto': ...
-#     }
-
-#     Parámetros:
-#     -----------
-#     - preguntas: lista de dicts con la estructura generada por generar_lista_preguntas.
-#     - front: 'console' (por defecto) o 'streamlit'.
-#     - st: referencia al módulo streamlit (solo si front='streamlit').
-#     """
-#     respuestas = []
-
-#     for p in preguntas:
-#         variable = p['variable']
-#         descripcion = p['descripcion']
-#         tipo = p['tipo']
-
-#         if tipo == 'opciones':
-#             # Tiene 'opciones'
-#             opciones = p.get('opciones', {})
-#             if front == 'console':
-#                 r_codigo, r_texto = preguntar_opciones_console(variable, descripcion, opciones)
-#             elif front == 'streamlit' and st is not None:
-#                 r_codigo, r_texto = preguntar_opciones_streamlit(variable, descripcion, opciones, st)
-#             else:
-#                 raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
-
-#         else:
-#             # pregunta numérica
-#             if front == 'console':
-#                 r_codigo, r_texto = preguntar_numero_console(variable, descripcion)
-#             elif front == 'streamlit' and st is not None:
-#                 r_codigo, r_texto = preguntar_numero_streamlit(variable, descripcion, st)
-#             else:
-#                 raise ValueError("Front no válido o no se pasó 'st' para Streamlit.")
-
-#         respuestas.append({
-#             'variable': variable,
-#             'descripcion': descripcion,
-#             'respuesta_codigo': r_codigo,
-#             'respuesta_texto': r_texto
-#         })
-
-#     return respuestas
-
 
 def respuestas_a_dataframe(respuestas):
     """
@@ -3261,48 +3116,47 @@ def construir_descripciones_cluster(
 
     return descripciones_por_cluster
 
-def preguntar_numero_streamlit(i, variable, descripcion):
-    unique_id = f"num_{variable}_{i}_{uuid.uuid4()}"
-    st.write(f"**{variable}**: {descripcion}")
-    val = st.number_input(
-        label=f"Numerical_{variable}_{i}",
-        label_visibility="collapsed",
-        value=0.0,
-        step=1.0,
-        key=unique_id
-    )
-    return val, str(val)
+
+
+def generar_lista_preguntas(data_desc):
+    preguntas = []
+    for var, info in data_desc.items():
+        desc = info.get('Descripción', var)
+        vals = info.get('Valores', [])
+        etiq = info.get('Etiquetas', [])
+        if vals and etiq and len(vals) == len(etiq):
+            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'opciones', 'opciones': dict(zip(vals, etiq))})
+        else:
+            preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'numeric'})
+    return preguntas
 
 def preguntar_opciones_streamlit(i, variable, descripcion, opciones):
-    unique_id = f"sel_{variable}_{i}_{uuid.uuid4()}"
+    import uuid
+    key_uid = f"opt_{variable}_{i}_{uuid.uuid4()}"
     st.write(f"**{variable}**: {descripcion}")
     lista = [f"{k} - {v}" for k, v in opciones.items()]
-    sel = st.selectbox(
-        label=f"Opciones_{variable}_{i}",
-        label_visibility="collapsed",
-        options=lista,
-        key=unique_id
-    )
+    sel = st.selectbox("", lista, key=key_uid, label_visibility="collapsed")
     cod = int(sel.split(" - ")[0])
     return cod, opciones[cod]
 
+def preguntar_numero_streamlit(i, variable, descripcion):
+    import uuid
+    key_uid = f"num_{variable}_{i}_{uuid.uuid4()}"
+    st.write(f"**{variable}**: {descripcion}")
+    val = st.number_input("", value=0.0, step=1.0, key=key_uid, label_visibility="collapsed")
+    return val, str(val)
 
 def aplicar_cuestionario(preguntas):
-    respuestas = []
+    resp = []
     for i, p in enumerate(preguntas):
         var = p['variable']
         desc = p['descripcion']
         if p['tipo'] == 'opciones':
-            r_codigo, r_texto = preguntar_opciones_streamlit(i, var, desc, p['opciones'])
+            rcod, rtxt = preguntar_opciones_streamlit(i, var, desc, p['opciones'])
         else:
-            r_codigo, r_texto = preguntar_numero_streamlit(i, var, desc)
-        respuestas.append({
-            'variable': var,
-            'descripcion': desc,
-            'respuesta_codigo': r_codigo,
-            'respuesta_texto': r_texto
-        })
-    return pd.DataFrame(respuestas)
+            rcod, rtxt = preguntar_numero_streamlit(i, var, desc)
+        resp.append({'variable': var, 'descripcion': desc, 'respuesta_codigo': rcod, 'respuesta_texto': rtxt})
+    return pd.DataFrame(resp)
 
 def cuestionario_general(data_desc):
     lp = generar_lista_preguntas(data_desc)
@@ -3321,65 +3175,54 @@ def show_section4():
     st.write("Sección 4")
 
     TARGETS = list(st.session_state['df_valiosas_dict'].keys())
-    user_selected_target = st.selectbox("Elige Target", TARGETS)
-    df_datos_desc = st.session_state['df_valiosas_dict'][user_selected_target]
+    user_selected_target = st.selectbox("Target", TARGETS, index=0)
+
+    prefix = f"{user_selected_target}_"
+    df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
+    rename_map = {}
+    for c in df_cluster.columns:
+        if c.startswith(prefix):
+            rename_map[c] = c.replace(prefix,"")
+    df_cluster_target = df_cluster.rename(columns=rename_map)
 
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
     best_val = [x for x in best_val if x not in ['p133','CIUO2']]
 
-    lista_base = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
-    preguntas_lista = sorted(list(set(lista_base+best_val)))
+    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
-    # Ejemplo: supón que data_desc vive en session o se obtiene de otra forma
-    # Aquí no repetimos la obtención, asume que "data_desc" ya existe
-    # Podrías ajustar a tu fuente real
-    data_desc = {}  
-    # Mínimo mock, el real vendría de tu base
-    for p in preguntas_lista:
-        data_desc[p] = {'Descripción': f"Pregunta {p}", 'Valores': [], 'Etiquetas': []}
+    # data_desc real vendría de get_data_desc() y tendría info completa
+    data_desc_global = get_data_desc()
+    data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
+
+    st.write("Contesta el cuestionario:")
+    cols_per_row = 3
 
     with st.form("cuestionario_form"):
-        st.write("Contesta las preguntas:")
-        df_respuestas = cuestionario_general({k: data_desc[k] for k in preguntas_lista if k in data_desc})
+
+        df_respuestas = cuestionario_general(data_desc_usable)
         ejecutar = st.form_submit_button("Ejecutar")
 
     if ejecutar:
-        df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
-        prefix = user_selected_target+"_"
-        ren = {}
-        for c in df_cluster.columns:
-            if c.startswith(prefix):
-                ren[c] = c.replace(prefix,"")
-        df_cluster_target = df_cluster.rename(columns=ren)
-        df_datos_valiosas = df_datos_desc
+        df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
+        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+        df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
+            df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
+        )
+        if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
+            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
 
-        # Filtros
-        opciones_filtro = {
-            'cambio': lambda df: df[(df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0)].sort_values('N_probabilidad', ascending=False),
-            'gobierno': lambda df: df[df['involucrados_gobierno']>0],
-            'extenso': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']==0)&(df['N_probabilidad']>1)],
-            'confidence': lambda df: df[((df['cambio_yo_moderado']>0)|(df['cambio_yo_difícil']>0)|(df['cambio_yo_fácil']>0))&(df['nivel_de_confianza_cluster']>0)]
-        }
+        # Filtrado por defecto: confidence
+        df_filtrado = df_datos_descript_valiosas_respuestas[
+            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
+            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
 
-        choice = st.selectbox("Filtrar por:", list(opciones_filtro.keys()))
+        resultado = construir_descripciones_cluster(df_filtrado, None, None, language='es', show_N_probabilidad=True, show_Probabilidad=True)
 
-        if st.button("Mostrar"):
-            df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
-            df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
-                df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
-            )
-            if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-                df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
-            if 'cambio_yo_moderado' not in df_datos_descript_valiosas_respuestas.columns:
-                df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] = 0
-            if 'cambio_yo_difícil' not in df_datos_descript_valiosas_respuestas.columns:
-                df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] = 0
-            if 'cambio_yo_fácil' not in df_datos_descript_valiosas_respuestas.columns:
-                df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] = 0
-            if 'involucrados_gobierno' not in df_datos_descript_valiosas_respuestas.columns:
-                df_datos_descript_valiosas_respuestas['involucrados_gobierno'] = 0
-
-            df_filtrado = opciones_filtro[choice](df_datos_descript_valiosas_respuestas)
-            result = construir_descripciones_cluster(df_filtrado, None, None, language='es', show_N_probabilidad=True, show_Probabilidad=True)
-            st.dataframe(result)
+        st.write("**Resultado en texto:**")
+        for idx, row in resultado.iterrows():
+            st.write(f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}")
