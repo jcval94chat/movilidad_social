@@ -3720,8 +3720,11 @@ def show_section4():
                     key = preguntas_lista[idx]
                     # Obtiene el texto original de la pregunta
                     question_text = data_desc_usable.get(key, key)
-                    # Elimina el nombre de la variable del texto (si aparece al comienzo)
-                    if question_text.startswith(key):
+                    # Si es un diccionario, extrae el valor asociado a 'descripcion'
+                    if isinstance(question_text, dict):
+                        question_text = question_text.get('Descripción', key)
+                    # Elimina el nombre de la variable (ej. "p05") del comienzo del texto, si aparece
+                    if isinstance(question_text, str) and question_text.startswith(key):
                         question_text = question_text[len(key):].lstrip(" -:")
                     responses[key] = col.text_input(question_text, key=key)
         ejecutar = st.form_submit_button("Ejecutar")
