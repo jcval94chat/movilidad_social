@@ -3671,6 +3671,7 @@ def cuestionario_general(data_desc):
 #         st.write("\n\n".join(resultado.values()))
 
 
+
 def show_section4():
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
@@ -3697,56 +3698,52 @@ def show_section4():
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
     best_val = [x for x in best_val if x not in ['p133','CIUO2']]
 
-    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    base_pregs = ['p05','p86','p33_f','p43','p43m','p13']#,'p98','p151','p64']
     preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
-    # data_desc real vendría de get_data_desc() y tendría info completa
+    # data_desc_global vendría de get_data_desc() y contiene la descripción completa de cada variable
     data_desc_global = get_data_desc()
+    # Se conservan solo las preguntas que existan en data_desc_global
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
     st.write("Contesta el cuestionario:")
+    cols_per_row = 3
 
-    # --- Sección del formulario: 2 preguntas por renglón con placeholder sin el nombre de la variable ---
     with st.form("cuestionario_form"):
-        respuestas = {}
-        # Iterar en pasos de 2 para mostrar dos columnas por renglón
-        for i in range(0, len(preguntas_lista), 2):
-            cols = st.columns(2)
-            for j in range(2):
-                if i + j < len(preguntas_lista):
-                    code = preguntas_lista[i + j]
-                    # Obtener el texto original de la pregunta
-                    q_text = data_desc_usable.get(code, "")
-                    # Si q_text no es string, intentar extraer la descripción o convertir a string
-                    if not isinstance(q_text, str):
-                        q_text = q_text.get("Descripción", str(q_text))
-                    # Si el texto empieza con el código (p.ej. "p05:"), se elimina esa parte
-                    if q_text.startswith(code):
-                        q_text = q_text[len(code):].strip()
-                        if q_text.startswith(":"):
-                            q_text = q_text[1:].strip()
-                    # Se usa el texto como placeholder (fondo) en el campo de entrada
-                    respuestas[code] = cols[j].text_input(label="", placeholder=q_text, key=code)
+        responses = {}
+        # Se muestran 3 preguntas por renglón usando st.columns
+        for i in range(0, len(preguntas_lista), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for j, col in enumerate(cols):
+                idx = i + j
+                if idx < len(preguntas_lista):
+                    key = preguntas_lista[idx]
+                    # Obtiene el texto original de la pregunta
+                    question_text = data_desc_usable.get(key, key)
+                    # Elimina el nombre de la variable del texto (si aparece al comienzo)
+                    if question_text.startswith(key):
+                        question_text = question_text[len(key):].lstrip(" -:")
+                    responses[key] = col.text_input(question_text, key=key)
         ejecutar = st.form_submit_button("Ejecutar")
 
     if ejecutar:
-        df_respuestas = respuestas
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
-        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(responses, df_cluster_target, df_datos_valiosas)
         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
             df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
         )
         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
+            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1, 5, size=len(df_datos_descript_valiosas_respuestas))
 
-        # Filtrado por defecto: confidence
+        # Filtrado por defecto: se seleccionan filas con algún cambio y con nivel de confianza > 0
         df_filtrado = df_datos_descript_valiosas_respuestas[
-            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
-             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
-             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
-            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
-        
+            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] > 0) |
+             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
+             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
+            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in 
+                 ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
+
         nuevo_diccionario = get_nuevo_diccionario()
 
         resultado = construir_descripciones_cluster(df_filtrado, 
@@ -3756,8 +3753,7 @@ def show_section4():
                                                     show_N_probabilidad=True, 
                                                     show_Probabilidad=True)
 
-        # Mostrar las descripciones generadas
+        # Se muestran los resultados (cada descripción ya viene formateada)
         for cluster_id, descripcion in resultado.items():
             st.write(descripcion)
         st.write("\n\n".join(resultado.values()))
-
