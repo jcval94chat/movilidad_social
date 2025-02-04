@@ -3654,7 +3654,7 @@ def show_section4():
         
         
         nuevo_diccionario = get_nuevo_diccionario()
-        
+
         resultado = construir_descripciones_cluster(df_filtrado, 
                                                     data_desc_global, 
                                                     nuevo_diccionario, 
@@ -3662,7 +3662,7 @@ def show_section4():
                                                     show_N_probabilidad=True, 
                                                     show_Probabilidad=True)
 
-        st.write("**Resultado en texto:**")
-        for idx, row in resultado.iterrows():
-            st.write(f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}")
-
+        st.write("\n".join(
+            f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}"
+            for _, row in resultado.iterrows()
+        ))
