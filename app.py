@@ -4,7 +4,7 @@ import streamlit as st
 from section1 import show_section1, random_filter_selection as random_section1
 from section2 import show_section2, random_origin_dest as random_section2
 from section3 import show_section3, random_origin_dest as random_section3  # Asegúrate de importar la función correcta
-
+from section4 import show_section4
 
 def main():
     st.set_page_config(layout="wide")
@@ -38,7 +38,9 @@ def main():
     # -----------------------------------------------------------------
     # TABS
     # -----------------------------------------------------------------
-    tab1, tab2, tab3 = st.tabs(["Movilidad", "Evolución Temporal", "¿Qué clase soy?"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Movilidad", "Evolución Temporal", 
+                                      "¿Qué clase soy?",
+                                      "Pobre a Rico"])
 
     with tab1:
         show_section1()
@@ -46,6 +48,8 @@ def main():
         show_section2()
     with tab3:
         show_section3()
+    with tab4:
+        show_section4()
 
 if __name__ == "__main__":
     main()

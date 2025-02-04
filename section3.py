@@ -58,7 +58,7 @@ def show_section3():
         }
 
     # Mensaje breve
-    st.write("Selecciona y presiona **Procesar**:")
+    st.write("Selecciona los que tienes y dale a **Procesar**:")
 
     # Crear un formulario para que no haya recarga en cada click de checkbox
     with st.form("form_variables"):
