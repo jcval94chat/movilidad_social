@@ -2869,32 +2869,27 @@ def preguntar_numero_console(variable, descripcion):
 # Funciones para preguntar en Streamlit
 # ================================
 
-def preguntar_opciones_streamlit(variable, descripcion, opciones, st):
-    """
-    Muestra una pregunta con opciones en Streamlit y retorna (codigo, texto).
-    'st' es el módulo streamlit importado.
-    """
-    st.write(f"**Variable**: {variable}")
-    st.write(descripcion)
-    # Creamos la lista de opciones para selectbox
-    # ejemplo: "1 - Sí"
-    opciones_list = [f"{k} - {v}" for k,v in opciones.items()]
-    seleccion = st.selectbox("Seleccione una opción", opciones_list)
+def preguntar_opciones_streamlit(variable, descripcion, opciones):
+    st.write(f"**{variable}**: {descripcion}")
+    lista = [f"{k} - {v}" for k, v in opciones.items()]
+    sel = st.selectbox(
+        "", 
+        lista,
+        key=f"sel_{variable}"  # Un key único para cada variable
+    )
+    cod = int(sel.split(" - ")[0])
+    return cod, opciones[cod]
 
-    # Extraemos el código (lo que está antes del primer ' - ')
-    codigo_str = seleccion.split(" - ")[0]
-    codigo_int = int(codigo_str)
-    return codigo_int, opciones[codigo_int]
+def preguntar_numero_streamlit(variable, descripcion):
+    st.write(f"**{variable}**: {descripcion}")
+    val = st.number_input(
+        "", 
+        value=0.0, 
+        step=1.0,
+        key=f"num_{variable}"  # Un key único para cada variable
+    )
+    return val, str(val)
 
-
-def preguntar_numero_streamlit(variable, descripcion, st):
-    """
-    Muestra una pregunta numérica en Streamlit y retorna (numero, str(numero)).
-    """
-    st.write(f"**Variable**: {variable}")
-    st.write(descripcion)
-    valor = st.number_input("Ingrese un valor", value=0.0, step=1.0)
-    return valor, str(valor)
 
 
 # ================================
