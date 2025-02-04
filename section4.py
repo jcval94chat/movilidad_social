@@ -3917,7 +3917,6 @@ def format_all_clusters(resultado):
     return formatted_result
 
 
-
 def show_section4():
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
@@ -3961,10 +3960,12 @@ def show_section4():
     df_cluster_target = df_cluster.rename(columns=rename_map)
 
     df_feature_import = st.session_state['df_feature_importances_total']
-    best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
+    best_val = [x.split('-')[0].strip() for x in 
+                df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:7]
+    
     best_val = [x for x in best_val if x not in ['p133','CIUO2','p23']]
 
-    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98']#,'p151','p64']
+    base_pregs = ['p05','p86','p33_f',]#'p43','p43m','p13','p98']#,'p151','p64']
     preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
     # data_desc_global se obtiene de get_data_desc() y contiene la información completa de cada variable
@@ -4012,10 +4013,10 @@ def show_section4():
         #     st.write(descripcion)
         # st.write("\n\n".join(resultado.values()))
 
-
         formatted_resultado = format_all_clusters(resultado)
 
         st.write("### Resultados:")
         # Se usa st.markdown con unsafe_allow_html=True para aplicar el estilo en el incremento
         for cluster_id, desc in formatted_resultado.items():
             st.markdown(desc, unsafe_allow_html=True)
+
