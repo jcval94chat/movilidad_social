@@ -3674,11 +3674,11 @@ def cuestionario_general(data_desc):
 def show_section4():
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
-        st.session_state['df_valiosas_dict'] = joblib.load(base_path + 'df_valiosas_dict.joblib')
+        st.session_state['df_valiosas_dict'] = joblib.load(base_path+'df_valiosas_dict.joblib')
     if 'df_feature_importances_total' not in st.session_state:
-        st.session_state['df_feature_importances_total'] = joblib.load(base_path + 'df_feature_importances_total.joblib')
+        st.session_state['df_feature_importances_total'] = joblib.load(base_path+'df_feature_importances_total.joblib')
     if 'df_clusterizados_total_origi' not in st.session_state:
-        st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path + 'df_clusterizados_total_origi.csv')
+        st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
 
     st.write("Sección 4")
 
@@ -3695,10 +3695,10 @@ def show_section4():
 
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
-    best_val = [x for x in best_val if x not in ['p133', 'CIUO2']]
+    best_val = [x for x in best_val if x not in ['p133','CIUO2']]
 
-    base_pregs = ['p05', 'p86', 'p33_f', 'p43', 'p43m', 'p13', 'p98', 'p151', 'p64']
-    preguntas_lista = sorted(list(set(base_pregs + best_val)))
+    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
     # data_desc real vendría de get_data_desc() y tendría info completa
     data_desc_global = get_data_desc()
@@ -3717,6 +3717,9 @@ def show_section4():
                     code = preguntas_lista[i + j]
                     # Obtener el texto original de la pregunta
                     q_text = data_desc_usable.get(code, "")
+                    # Si q_text no es string, intentar extraer la descripción o convertir a string
+                    if not isinstance(q_text, str):
+                        q_text = q_text.get("descripcion", str(q_text))
                     # Si el texto empieza con el código (p.ej. "p05:"), se elimina esa parte
                     if q_text.startswith(code):
                         q_text = q_text[len(code):].strip()
@@ -3727,7 +3730,6 @@ def show_section4():
         ejecutar = st.form_submit_button("Ejecutar")
 
     if ejecutar:
-        # Se asigna el diccionario de respuestas obtenido en el formulario
         df_respuestas = respuestas
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
@@ -3735,23 +3737,23 @@ def show_section4():
             df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
         )
         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1, 5, size=len(df_datos_descript_valiosas_respuestas))
+            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
 
         # Filtrado por defecto: confidence
         df_filtrado = df_datos_descript_valiosas_respuestas[
-            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] > 0) |
-             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
-             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
-            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
-
+            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
+             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
+            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
+        
         nuevo_diccionario = get_nuevo_diccionario()
 
-        resultado = construir_descripciones_cluster(df_filtrado,
-                                                    data_desc_global,
-                                                    nuevo_diccionario,
-                                                    language='es',
-                                                    show_N_probabilidad=True,
+        resultado = construir_descripciones_cluster(df_filtrado, 
+                                                    data_desc_global, 
+                                                    nuevo_diccionario, 
+                                                    language='es', 
+                                                    show_N_probabilidad=True, 
                                                     show_Probabilidad=True)
 
         # Mostrar las descripciones generadas
