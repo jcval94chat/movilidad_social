@@ -3594,6 +3594,85 @@ def cuestionario_general(data_desc):
     df = aplicar_cuestionario(lp)
     return df
 
+# def show_section4():
+#     base_path = 'data/'
+#     if 'df_valiosas_dict' not in st.session_state:
+#         st.session_state['df_valiosas_dict'] = joblib.load(base_path+'df_valiosas_dict.joblib')
+#     if 'df_feature_importances_total' not in st.session_state:
+#         st.session_state['df_feature_importances_total'] = joblib.load(base_path+'df_feature_importances_total.joblib')
+#     if 'df_clusterizados_total_origi' not in st.session_state:
+#         st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
+
+#     st.write("Sección 4")
+
+#     TARGETS = list(st.session_state['df_valiosas_dict'].keys())
+#     user_selected_target = st.selectbox("Target", TARGETS, index=0)
+
+#     prefix = f"{user_selected_target}_"
+#     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
+#     rename_map = {}
+#     for c in df_cluster.columns:
+#         if c.startswith(prefix):
+#             rename_map[c] = c.replace(prefix,"")
+#     df_cluster_target = df_cluster.rename(columns=rename_map)
+
+#     df_feature_import = st.session_state['df_feature_importances_total']
+#     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
+#     best_val = [x for x in best_val if x not in ['p133','CIUO2']]
+
+#     base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+#     preguntas_lista = sorted(list(set(base_pregs+best_val)))
+
+#     # data_desc real vendría de get_data_desc() y tendría info completa
+#     data_desc_global = get_data_desc()
+#     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
+
+#     st.write("Contesta el cuestionario:")
+#     cols_per_row = 3
+
+#     with st.form("cuestionario_form"):
+
+#         df_respuestas = cuestionario_general(data_desc_usable)
+#         ejecutar = st.form_submit_button("Ejecutar")
+
+#     if ejecutar:
+#         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
+#         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+#         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
+#             df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
+#         )
+#         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
+#             df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
+
+#         # Filtrado por defecto: confidence
+#         df_filtrado = df_datos_descript_valiosas_respuestas[
+#             ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
+#              (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
+#              (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
+#             (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
+#         ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
+        
+        
+#         nuevo_diccionario = get_nuevo_diccionario()
+
+#         resultado = construir_descripciones_cluster(df_filtrado, 
+#                                                     data_desc_global, 
+#                                                     nuevo_diccionario, 
+#                                                     language='es', 
+#                                                     show_N_probabilidad=True, 
+#                                                     show_Probabilidad=True)
+
+
+#         # Opción 1: Iterar e imprimir cada descripción
+#         for cluster_id, descripcion in resultado.items():
+#             st.write(descripcion)
+            
+#         # Opción 2: Imprimir todas las descripciones en un solo bloque (separadas por dos saltos de línea)
+#         st.write("\n\n".join(resultado.values()))
+
+
+
+
 def show_section4():
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
@@ -3621,19 +3700,35 @@ def show_section4():
     best_val = [x for x in best_val if x not in ['p133','CIUO2']]
 
     base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
-    preguntas_lista = sorted(list(set(base_pregs+best_val)))
+    preguntas_lista = sorted(list(set(base_pregs + best_val)))
 
-    # data_desc real vendría de get_data_desc() y tendría info completa
+    # data_desc_global vendría de get_data_desc() y contiene la descripción completa de cada pregunta.
     data_desc_global = get_data_desc()
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
     st.write("Contesta el cuestionario:")
-    cols_per_row = 3
 
+    # --- Formulario de cuestionario adaptado ---
     with st.form("cuestionario_form"):
-
-        df_respuestas = cuestionario_general(data_desc_usable)
+        responses = {}
+        # Creamos 3 columnas para colocar 3 preguntas por renglón
+        cols = st.columns(3)
+        # Recorremos las preguntas en el orden definido en preguntas_lista
+        for i, q in enumerate(preguntas_lista):
+            # Se usa el índice para elegir la columna (se reinicia cada 3 preguntas)
+            col = cols[i % 3]
+            with col:
+                # Se muestra la descripción dentro de un recuadro (HTML con fondo gris claro)
+                st.markdown(
+                    f"<div style='background-color:#f5f5f5; padding:8px; border-radius:5px;'>"
+                    f"{data_desc_usable[q]}"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
+                # Se coloca un input de texto sin etiqueta, usando la descripción como placeholder
+                responses[q] = st.text_input("", key=f"question_{q}")
         ejecutar = st.form_submit_button("Ejecutar")
+        df_respuestas = responses  # Simulamos que este diccionario será el resultado del cuestionario
 
     if ejecutar:
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
@@ -3642,30 +3737,28 @@ def show_section4():
             df_datos_descript_valiosas_respuestas['Soporte'], q=4, labels=False
         )
         if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
+            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1, 5, size=len(df_datos_descript_valiosas_respuestas))
 
-        # Filtrado por defecto: confidence
+        # Filtrado por defecto: se toman aquellos que tienen al menos algún cambio y nivel de confianza > 0
         df_filtrado = df_datos_descript_valiosas_respuestas[
-            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado']>0)|
-             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
-             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
-            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
-        
+            ((df_datos_descript_valiosas_respuestas['cambio_yo_moderado'] > 0) |
+             (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
+             (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
+            (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in 
+                 ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) \
+          else df_datos_descript_valiosas_respuestas
         
         nuevo_diccionario = get_nuevo_diccionario()
 
-        resultado = construir_descripciones_cluster(df_filtrado, 
-                                                    data_desc_global, 
-                                                    nuevo_diccionario, 
-                                                    language='es', 
-                                                    show_N_probabilidad=True, 
-                                                    show_Probabilidad=True)
+        resultado = construir_descripciones_cluster(
+            df_filtrado,
+            data_desc_global,
+            nuevo_diccionario,
+            language='es',
+            show_N_probabilidad=True,
+            show_Probabilidad=True
+        )
 
-
-        # Opción 1: Iterar e imprimir cada descripción
-        for cluster_id, descripcion in resultado.items():
-            st.write(descripcion)
-            
-        # Opción 2: Imprimir todas las descripciones en un solo bloque (separadas por dos saltos de línea)
+        # Mostrar las descripciones resultantes
         st.write("\n\n".join(resultado.values()))
