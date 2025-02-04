@@ -3680,7 +3680,7 @@ def show_section4():
     if 'df_clusterizados_total_origi' not in st.session_state:
         st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
 
-    TARGETS = list(st.session_state['df_valiosas_dict'].keys())
+    
 
     nombres_targets = {
         'OBJ_pobre_a_rico': "De Pobre a Rico",
@@ -3694,7 +3694,9 @@ def show_section4():
         'OBJ_bajaron': "Descendieron"
     }
 
-    user_selected_target = st.selectbox("Target", list(nombres_targets.values), index=0)
+    TARGETS = list(nombres_targets.values())
+
+    user_selected_target = st.selectbox("Target", TARGETS, index=0)
 
     nombres_targets_inver =  {v:k for k, v in nombres_targets.items()}
 
