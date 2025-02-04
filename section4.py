@@ -3700,10 +3700,11 @@ def show_section4():
 
     # Ordenar o conservar el orden original si es necesario
     # Por ejemplo, en el selectbox se muestra el nombre amigable pero se conserva el valor original:
-    user_selected_target = st.selectbox("Target", options=[(valor, nombre) for valor, nombre in opciones],
+    retorno_user = st.selectbox("Target", options=[(valor, nombre) for valor, nombre in opciones],
                             format_func=lambda x: x[1])
 
-
+    user_selected_target = retorno_user[0]
+    
     prefix = f"{user_selected_target}_"
     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
     rename_map = {}
