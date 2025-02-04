@@ -3700,34 +3700,35 @@ def show_section4():
     base_pregs = ['p05', 'p86', 'p33_f', 'p43', 'p43m', 'p13', 'p98', 'p151', 'p64']
     preguntas_lista = sorted(list(set(base_pregs + best_val)))
 
-    # data_desc_global vendría de get_data_desc() y tiene la info completa
+    # data_desc real vendría de get_data_desc() y tendría info completa
     data_desc_global = get_data_desc()
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
     st.write("Contesta el cuestionario:")
 
-    import re
+    # --- Sección del formulario: 2 preguntas por renglón con placeholder sin el nombre de la variable ---
     with st.form("cuestionario_form"):
         respuestas = {}
-        # Mostrar 2 preguntas por fila
+        # Iterar en pasos de 2 para mostrar dos columnas por renglón
         for i in range(0, len(preguntas_lista), 2):
             cols = st.columns(2)
-            # Primera pregunta de la fila
-            var = preguntas_lista[i]
-            q_text = data_desc_usable.get(var, "")
-            # Se remueve el nombre de la variable (ej. "p05") del comienzo del texto
-            q_text_clean = re.sub(r"^" + re.escape(var) + r"[\s\-\:]*", "", q_text)
-            respuestas[var] = cols[0].text_input("", placeholder=q_text_clean, key=f"{var}_cuest")
-            # Segunda pregunta, si existe
-            if i + 1 < len(preguntas_lista):
-                var2 = preguntas_lista[i + 1]
-                q_text2 = data_desc_usable.get(var2, "")
-                q_text2_clean = re.sub(r"^" + re.escape(var2) + r"[\s\-\:]*", "", q_text2)
-                respuestas[var2] = cols[1].text_input("", placeholder=q_text2_clean, key=f"{var2}_cuest")
+            for j in range(2):
+                if i + j < len(preguntas_lista):
+                    code = preguntas_lista[i + j]
+                    # Obtener el texto original de la pregunta
+                    q_text = data_desc_usable.get(code, "")
+                    # Si el texto empieza con el código (p.ej. "p05:"), se elimina esa parte
+                    if q_text.startswith(code):
+                        q_text = q_text[len(code):].strip()
+                        if q_text.startswith(":"):
+                            q_text = q_text[1:].strip()
+                    # Se usa el texto como placeholder (fondo) en el campo de entrada
+                    respuestas[code] = cols[j].text_input(label="", placeholder=q_text, key=code)
         ejecutar = st.form_submit_button("Ejecutar")
-        df_respuestas = respuestas
 
     if ejecutar:
+        # Se asigna el diccionario de respuestas obtenido en el formulario
+        df_respuestas = respuestas
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
@@ -3742,22 +3743,18 @@ def show_section4():
              (df_datos_descript_valiosas_respuestas['cambio_yo_difícil'] > 0) |
              (df_datos_descript_valiosas_respuestas['cambio_yo_fácil'] > 0)) &
             (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] > 0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in [
-            'cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster'
-        ]) else df_datos_descript_valiosas_respuestas
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado', 'cambio_yo_difícil', 'cambio_yo_fácil', 'nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
 
         nuevo_diccionario = get_nuevo_diccionario()
 
-        resultado = construir_descripciones_cluster(
-            df_filtrado,
-            data_desc_global,
-            nuevo_diccionario,
-            language='es',
-            show_N_probabilidad=True,
-            show_Probabilidad=True
-        )
+        resultado = construir_descripciones_cluster(df_filtrado,
+                                                    data_desc_global,
+                                                    nuevo_diccionario,
+                                                    language='es',
+                                                    show_N_probabilidad=True,
+                                                    show_Probabilidad=True)
 
-        # Mostrar el resultado: se pueden elegir entre iterar o mostrar en bloque
+        # Mostrar las descripciones generadas
         for cluster_id, descripcion in resultado.items():
             st.write(descripcion)
         st.write("\n\n".join(resultado.values()))
