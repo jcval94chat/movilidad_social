@@ -3663,9 +3663,9 @@ def show_section4():
                                                     show_Probabilidad=True)
 
 
-        for key, df in resultado.items():
-            st.write(f"Resultados para '{key}':")
-            st.write("\n".join(
-                f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}"
-                for _, row in df.iterrows()
-            ))
+        # Opción 1: Iterar e imprimir cada descripción
+        for cluster_id, descripcion in resultado.items():
+            st.write(descripcion)
+            
+        # Opción 2: Imprimir todas las descripciones en un solo bloque (separadas por dos saltos de línea)
+        st.write("\n\n".join(resultado.values()))
