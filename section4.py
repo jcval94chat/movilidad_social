@@ -3268,7 +3268,8 @@ def cuestionario_general(data_desc, front='console', st=None):
 
 
 
-def obtener_vecinos_de_mi_respuesta(df_respuestas, df_datos_clusterizados_, df_datos_descript_valiosas, n_vecinos=20):
+def obtener_vecinos_de_mi_respuesta(df_respuestas, df_datos_clusterizados_, 
+                                    df_datos_descript_valiosas, n_vecinos=20):
     """
     Encuentra los vecinos más cercanos en términos de distancia euclidiana dentro de los datos clusterizados
     y devuelve las características descriptivas de los clusters más representativos.
@@ -3671,6 +3672,84 @@ def cuestionario_general(data_desc):
 #         st.write("\n\n".join(resultado.values()))
 
 
+import streamlit as st
+import pandas as pd
+import uuid
+
+def generar_lista_preguntas(data_desc):
+    preguntas = []
+    for var, info in data_desc.items():
+        desc = info.get('Descripción', var)
+        vals = info.get('Valores', [])
+        etiq = info.get('Etiquetas', [])
+        if vals and etiq and len(vals) == len(etiq):
+            preguntas.append({
+                'variable': var,
+                'descripcion': desc,
+                'tipo': 'opciones',
+                'opciones': dict(zip(vals, etiq))
+            })
+        else:
+            preguntas.append({
+                'variable': var,
+                'descripcion': desc,
+                'tipo': 'numeric'
+            })
+    return preguntas
+
+def preguntar_opciones_streamlit(i, variable, descripcion, opciones):
+    key_uid = f"opt_{variable}_{i}_{uuid.uuid4()}"
+    st.write(f"**{variable}**: {descripcion}")
+    lista = [f"{k} - {v}" for k, v in opciones.items()]
+    sel = st.selectbox("", lista, key=key_uid, label_visibility="collapsed")
+    cod = int(sel.split(" - ")[0])
+    return cod, opciones[cod]
+
+def preguntar_numero_streamlit(i, variable, descripcion):
+    key_uid = f"num_{variable}_{i}_{uuid.uuid4()}"
+    st.write(f"**{variable}**: {descripcion}")
+    val = st.number_input("", value=0.0, step=1.0, key=key_uid, label_visibility="collapsed")
+    return val, str(val)
+
+def aplicar_cuestionario_en_columnas(preguntas, cols_per_row=3):
+    """
+    Muestra las preguntas agrupadas en filas con 'cols_per_row' columnas,
+    reutilizando las funciones de pregunta.
+    """
+    resp = []
+    # Iteramos en bloques de 'cols_per_row'
+    for i in range(0, len(preguntas), cols_per_row):
+        # Creamos una fila con las columnas
+        cols = st.columns(cols_per_row)
+        # Iteramos en cada columna junto a la pregunta correspondiente
+        for j, col in enumerate(cols):
+            idx = i + j
+            if idx < len(preguntas):
+                p = preguntas[idx]
+                var = p['variable']
+                desc = p['descripcion']
+                # Todo lo que se muestra en esta columna se agrupa con "with col:"
+                with col:
+                    if p['tipo'] == 'opciones':
+                        rcod, rtxt = preguntar_opciones_streamlit(idx, var, desc, p['opciones'])
+                    else:
+                        rcod, rtxt = preguntar_numero_streamlit(idx, var, desc)
+                resp.append({
+                    'variable': var,
+                    'descripcion': desc,
+                    'respuesta_codigo': rcod,
+                    'respuesta_texto': rtxt
+                })
+    return pd.DataFrame(resp)
+
+def cuestionario_general(data_desc, cols_per_row=3):
+    lp = generar_lista_preguntas(data_desc)
+    df = aplicar_cuestionario_en_columnas(lp, cols_per_row)
+    return df
+
+
+
+
 def show_section4():
     base_path = 'data/'
     if 'df_valiosas_dict' not in st.session_state:
@@ -3724,29 +3803,16 @@ def show_section4():
     data_desc_global = get_data_desc()
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
 
-    # Se muestra el formulario con 3 preguntas por renglón, usando selectbox en lugar de checkboxes o radio.
     with st.form("cuestionario_form"):
-        responses = {}
-        # Convertimos data_desc_usable en una lista para iterar de forma ordenada.
-        questions = list(data_desc_usable.items())
-        cols_per_row = 3
-        for i in range(0, len(questions), cols_per_row):
-            cols = st.columns(cols_per_row)
-            for col, (q_key, q_data) in zip(cols, questions[i:i+cols_per_row]):
-                # Se muestra la "Descripción" en lugar del nombre de la variable.
-                question_text = q_data.get("Descripción", q_key)
-                # Si existen opciones definidas en "Etiquetas", se utiliza un selectbox.
-                opciones = q_data.get("Etiquetas", [])
-                if opciones:
-                    responses[q_key] = col.selectbox(label=question_text, options=opciones)
-                else:
-                    responses[q_key] = col.text_input(label=question_text)
+        df_respuestas = cuestionario_general(data_desc_usable, cols_per_row=3)
         ejecutar = st.form_submit_button("Ejecutar")
-        df_respuestas = responses
 
     if ejecutar:
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
-        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, df_cluster_target, df_datos_valiosas)
+        df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, 
+                                                                                df_cluster_target, 
+                                                                                df_datos_valiosas)
+        
         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
             df_datos_descript_valiosas_respuestas['Soporte'],
             q=4, labels=False
