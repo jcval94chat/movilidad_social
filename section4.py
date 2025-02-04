@@ -3719,7 +3719,7 @@ def show_section4():
                     q_text = data_desc_usable.get(code, "")
                     # Si q_text no es string, intentar extraer la descripción o convertir a string
                     if not isinstance(q_text, str):
-                        q_text = q_text.get("descripcion", str(q_text))
+                        q_text = q_text.get("Descripción", str(q_text))
                     # Si el texto empieza con el código (p.ej. "p05:"), se elimina esa parte
                     if q_text.startswith(code):
                         q_text = q_text[len(code):].strip()
