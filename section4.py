@@ -3680,7 +3680,7 @@ def show_section4():
     if 'df_clusterizados_total_origi' not in st.session_state:
         st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
 
-    
+    TARGETS = list(st.session_state['df_valiosas_dict'].keys())
 
     nombres_targets = {
         'OBJ_pobre_a_rico': "De Pobre a Rico",
@@ -3694,13 +3694,15 @@ def show_section4():
         'OBJ_bajaron': "Descendieron"
     }
 
-    TARGETS = list(nombres_targets.values())
+    # user_selected_target = st.selectbox("Target", TARGETS, index=0)
+    # Crear una lista de tuplas (valor, nombre amigable)
+    opciones = [(valor, nombres_targets.get(valor, valor)) for valor in TARGETS]
 
-    user_selected_target = st.selectbox("Target", TARGETS, index=0)
+    # Ordenar o conservar el orden original si es necesario
+    # Por ejemplo, en el selectbox se muestra el nombre amigable pero se conserva el valor original:
+    user_selected_target = st.selectbox("Target", options=[(valor, nombre) for valor, nombre in opciones],
+                            format_func=lambda x: x[1])
 
-    nombres_targets_inver =  {v:k for k, v in nombres_targets.items()}
-
-    user_selected_target = nombres_targets_inver[user_selected_target]
 
     prefix = f"{user_selected_target}_"
     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
