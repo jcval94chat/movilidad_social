@@ -3662,7 +3662,10 @@ def show_section4():
                                                     show_N_probabilidad=True, 
                                                     show_Probabilidad=True)
 
-        st.write("\n".join(
-            f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}"
-            for _, row in resultado.iterrows()
-        ))
+
+        for key, df in resultado.items():
+            st.write(f"Resultados para '{key}':")
+            st.write("\n".join(
+                f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}"
+                for _, row in df.iterrows()
+            ))
