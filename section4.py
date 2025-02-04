@@ -12,6 +12,437 @@ from sklearn.impute import SimpleImputer
 # section4.py
 import uuid
 import streamlit as st
+
+def get_nuevo_diccionario():
+    nuevo_diccionario = {
+
+    # p09_2 - (puedo cambiarlo yo / relacionado a mi)
+    "p09_2": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p134e - (puede cambiarlo el gobierno / a mi entorno)
+    "p134e": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p70 - (puedo cambiarlo yo / relacionado a mi)
+    "p70": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p35 - (no puedo cambiarlo / a mis padres)
+    "p35": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p54 - (no puedo cambiarlo / a mis padres)
+    "p54": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p09_3 - (puedo cambiarlo yo / relacionado a mi)
+    "p09_3": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p140 - (no puedo cambiarlo / relacionado a mi)
+    "p140": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p58 - (no puedo cambiarlo / a mis padres)
+    "p58": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p62g - (puede cambiarlo el gobierno / a mi entorno)
+    "p62g": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p126p - (no puedo cambiarlo / a mi entorno)
+    "p126p": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["entorno"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p151 - (no puedo cambiarlo / relacionado a mi)
+    "p151": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p15 - (puedo cambiarlo yo / relacionado a mi)
+    "p15": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["Tiempo"]}
+    ),
+
+    # p06 - (no puedo cambiarlo / relacionado a mi)
+    "p06": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p40m - (no puedo cambiarlo / a mis padres)
+    "p40m": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p40 - (no puedo cambiarlo / a mis padres)
+    "p40": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p134c - (puede cambiarlo el gobierno / a mi entorno)
+    "p134c": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p128b - (puedo cambiarlo yo / relacionado a mi)
+    "p128b": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento", "Dinero"]}
+    ),
+
+    # p138 - (no puedo cambiarlo / relacionado a mi)
+    "p138": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p66 - (puedo cambiarlo yo / relacionado a mi)
+    "p66": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p115 - (no puedo cambiarlo / relacionado a mi)
+    "p115": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p34_f - (no puedo cambiarlo / a mi entorno)
+    "p34_f": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["entorno"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p134i - (puede cambiarlo el gobierno / a mi entorno)
+    "p134i": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p128a - (puedo cambiarlo yo / relacionado a mi)
+    "p128a": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento", "Dinero"]}
+    ),
+
+    # p23 - (no puedo cambiarlo / relacionado a mi)
+    "p23": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p130c_11 - (puede cambiarlo el gobierno / a mi entorno)
+    "p130c_11": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p116 - (no puedo cambiarlo / relacionado a mi)
+    "p116": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p33_f - (no puedo cambiarlo / a mi entorno)
+    "p33_f": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["entorno"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p62h - (puede cambiarlo el gobierno / a mi entorno)
+    "p62h": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p136 - (no puedo cambiarlo / relacionado a mi)
+    "p136": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p117 - (no puedo cambiarlo / relacionado a mi)
+    "p117": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p113 - (no puedo cambiarlo / relacionado a mi)
+    "p113": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p134f - (puede cambiarlo el gobierno / a mi entorno)
+    "p134f": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p134h - (puede cambiarlo el gobierno / a mi entorno)
+    "p134h": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["gobierno", "entorno"]},
+        {"recursos_necesarios": ["Infraestructura", "Dinero"]}
+    ),
+
+    # p93 - (no puedo cambiarlo / relacionado a mi)
+    "p93": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p139 - (no puedo cambiarlo / relacionado a mi)
+    "p139": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p113_11 - (no puedo cambiarlo / relacionado a mi)
+    "p113_11": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # CIUO2 - (no puedo cambiarlo / a mis padres)
+    "CIUO2": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p130b - (puede cambiarlo el gobierno / relacionado a mi)
+    "p130b": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["yo", "gobierno", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento", "Infraestructura", "Dinero"]}
+    ),
+
+    # p130d - (no puedo cambiarlo / a mi entorno)
+    "p130d": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["entorno"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p98 - (no puedo cambiarlo / relacionado a mi)
+    "p98": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p86 - (puedo cambiarlo yo / relacionado a mi)
+    "p86": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p68 - (puedo cambiarlo yo / relacionado a mi)
+    "p68": (
+        {"puedo_cambiarlo_yo": "fácil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p13 - (puedo cambiarlo yo / relacionado a mi)
+    "p13": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "moderado"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p05 - (no puedo cambiarlo / relacionado a mi)
+    "p05": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p53 - (no puedo cambiarlo / a mis padres)
+    "p53": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p43m - (no puedo cambiarlo / a mis padres)
+    "p43m": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p43 - (no puedo cambiarlo / a mis padres)
+    "p43": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p46 - (no puedo cambiarlo / a mis padres)
+    "p46": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p133 - (puedo cambiarlo yo / a mi entorno)
+    "p133": (
+        {"puedo_cambiarlo_yo": "difícil"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento", "Infraestructura", "Dinero"]}
+    ),
+
+    # p76 - (puedo cambiarlo yo / relacionado a mi)
+    "p76": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["yo", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento"]}
+    ),
+
+    # p64 - (puedo cambiarlo yo / a mi entorno)
+    "p64": (
+        {"puedo_cambiarlo_yo": "moderado"},
+        {"puede_cambiarlo_gobierno": "difícil"},
+        {"involucrados": ["yo", "gobierno", "entorno"]},
+        {"recursos_necesarios": ["Tiempo", "Conocimiento", "Infraestructura", "Dinero"]}
+    ),
+
+    # p38_11 - (no puedo cambiarlo / a mis padres)
+    "p38_11": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+
+    # p38m_11 - (no puedo cambiarlo / a mis padres)
+    "p38m_11": (
+        {"puedo_cambiarlo_yo": "imposible"},
+        {"puede_cambiarlo_gobierno": "no_aplica"},
+        {"involucrados": ["padres"]},
+        {"recursos_necesarios": ["no_aplica"]}
+    ),
+    }
+    return nuevo_diccionario
+
+
 def get_data_desc():
     data_desc = {
         "folio": {
@@ -3220,9 +3651,18 @@ def show_section4():
              (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
             (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
         ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
-
-        resultado = construir_descripciones_cluster(df_filtrado, None, None, language='es', show_N_probabilidad=True, show_Probabilidad=True)
+        
+        
+        nuevo_diccionario = get_nuevo_diccionario()
+        
+        resultado = construir_descripciones_cluster(df_filtrado, 
+                                                    data_desc_global, 
+                                                    nuevo_diccionario, 
+                                                    language='es', 
+                                                    show_N_probabilidad=True, 
+                                                    show_Probabilidad=True)
 
         st.write("**Resultado en texto:**")
         for idx, row in resultado.iterrows():
             st.write(f"- cluster={row.get('cluster','?')} | N_prob={row.get('N_probabilidad','?')} | Soporte={row.get('Soporte','?')}")
+
