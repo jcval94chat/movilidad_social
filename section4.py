@@ -2555,12 +2555,12 @@ def get_data_desc():
         },
         "p112": {
             "Descripción": "Primer trabajo, recibió capacitación laboral",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p113": {
             "Descripción": "Familiar trabajaba en la misma empresa donde tuvo su primer trabajo",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p113_11": {
@@ -2570,17 +2570,17 @@ def get_data_desc():
         },
         "p114": {
             "Descripción": "Cuánto sirvieron las habilidades de escuela en el primer trabajo",
-            "Valores": ["1", "2", "3", "4"],
+            "Valores": [1, 2, 3, 4],
             "Etiquetas": ["Mucho", "Regular", "Poco", "No le sirvieron"]
         },
         "p115": {
             "Descripción": "Primer trabajo fue acorde con sus estudios",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p116": {
             "Descripción": "Recibió apoyo para conseguir su primer empleo",
-            "Valores": ["1", "2", "3", "4", "5", "6", "7"],
+            "Valores": [1, 2, 3, 4, 5, 6, 7],
             "Etiquetas": [
                 "Algún familiar",
                 "Algún amigo o conocido de usted o de sus padres",
@@ -2615,7 +2615,7 @@ def get_data_desc():
         },
         "p117": {
             "Descripción": "En su primer empleo, recibió un ascenso",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p118": {
@@ -2628,25 +2628,25 @@ def get_data_desc():
         },
         "p120": {
             "Descripción": "Material del piso de la vivienda",
-            "Valores": ["1", "2", "3"],
+            "Valores": [1, 2, 3],
             "Etiquetas": ["Tierra", "Cemento o firme", "Madera, mosaico u otro recubrimiento"]
         },
         "p121": {
             "Descripción": "Número de cuartos que usan para dormir",
-            "Valores": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            "Valores": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         },
         "p122": {
             "Descripción": "Número de cuartos en total en la vivienda, contando cocina",
-            "Valores": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            "Valores": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         },
         "p123": {
             "Descripción": "Es usted (o su cónyuge) propietario de esta vivienda",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p124": {
             "Descripción": "Situación de la vivienda",
-            "Valores": ["1", "2", "3", "4", "5", "6"],
+            "Valores": [1, 2, 3, 4, 5, 6],
             "Etiquetas": [
                 "Es rentada",
                 "Es prestada",
@@ -2671,122 +2671,122 @@ def get_data_desc():
         },
         "p125a": {
             "Descripción": "Servicios financieros: ahorros en tanda/caja ahorro",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p125b": {
             "Descripción": "Servicios financieros: cuenta ahorro",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p125c": {
             "Descripción": "Servicios financieros: cuenta bancaria",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p125d": {
             "Descripción": "Servicios financieros: tarjeta de crédito bancaria",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p125e": {
             "Descripción": "Servicios financieros: tarjeta de tienda departamental",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126a": {
             "Descripción": "Artículos vivienda: estufa de gas o eléctrica",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126b": {
             "Descripción": "Artículos vivienda: lavadora de ropa",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126c": {
             "Descripción": "Artículos vivienda: refrigerador",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126d": {
             "Descripción": "Artículos vivienda: horno de microondas",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126e": {
             "Descripción": "Artículos vivienda: televisor digital",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126f": {
             "Descripción": "Artículos vivienda: tostador eléctrico de pan",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126g": {
             "Descripción": "Artículos vivienda: aspiradora",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126h": {
             "Descripción": "Artículos vivienda: DVD, Blu-Ray",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126i": {
             "Descripción": "Artículos vivienda: consola de videojuegos",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126j": {
             "Descripción": "Artículos vivienda: televisión de paga",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126k": {
             "Descripción": "Artículos vivienda: línea telefónica fija",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126l": {
             "Descripción": "Artículos vivienda: teléfono celular",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126m": {
             "Descripción": "Artículos vivienda: conexión a internet",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126n": {
             "Descripción": "Artículos vivienda: tableta electrónica",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126o": {
             "Descripción": "Artículos vivienda: computadora",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126p": {
             "Descripción": "Artículos vivienda: animales de trabajo",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126q": {
             "Descripción": "Artículos vivienda: ganado",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p126r": {
             "Descripción": "Artículos vivienda: maquinaria o equipo agrícola",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p127": {
             "Descripción": "Si tuviera urgencia económica, cómo haría para pagar",
-            "Valores": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            "Valores": [1, 2, 3, 4, 5, 6, 7, 8, 9],
             "Etiquetas": [
                 "Empeñaría algo que le pertenece",
                 "Utilizaría sus ahorros",
@@ -2823,72 +2823,72 @@ def get_data_desc():
         },
         "p128a": {
             "Descripción": "Servicios financieros: ahorros en tanda/caja ahorro",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p128b": {
             "Descripción": "Servicios financieros: cuenta ahorro",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p128c": {
             "Descripción": "Servicios financieros: cuenta bancaria",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p128d": {
             "Descripción": "Servicios financieros: tarjeta de crédito bancaria",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p128e": {
             "Descripción": "Servicios financieros: tarjeta de tienda departamental",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p128f": {
             "Descripción": "Servicios financieros: préstamo o crédito",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p129a": {
             "Descripción": "Bienes del hogar: otra casa o departamento",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p129b": {
             "Descripción": "Bienes del hogar: local para uso comercial",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p129c": {
             "Descripción": "Bienes del hogar: negocio o parte de un negocio",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p129d": {
             "Descripción": "Bienes del hogar: tierras para labores del campo",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p129e": {
             "Descripción": "Bienes del hogar: algún otro terreno",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130a": {
             "Descripción": "Subsidios: apoyo del programa Prospera (Oportunidades)",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130b": {
             "Descripción": "Subsidios: apoyo del Programa Adultos Mayores",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130c": {
             "Descripción": "Subsidios: dinero o apoyo de otro programa de gobierno",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130c_11": {
@@ -2920,17 +2920,17 @@ def get_data_desc():
         },
         "p130d": {
             "Descripción": "Subsidios: apoyo de familiares que vivan en extranjero",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130e": {
             "Descripción": "Subsidios: apoyo de familiares que vivan en México",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
         "p130f": {
             "Descripción": "Subsidios: apoyo de otro tipo",
-            "Valores": ["1", "2"],
+            "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
 
