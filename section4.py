@@ -3704,7 +3704,7 @@ def show_section4():
                             format_func=lambda x: x[1])
 
     user_selected_target = retorno_user[0]
-    
+
     prefix = f"{user_selected_target}_"
     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
     rename_map = {}
@@ -3715,7 +3715,7 @@ def show_section4():
 
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
-    best_val = [x for x in best_val if x not in ['p133','CIUO2','p23 ']]
+    best_val = [x for x in best_val if x not in ['p133','CIUO2','p23']]
 
     base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98']#,'p151','p64']
     preguntas_lista = sorted(list(set(base_pregs+best_val)))
