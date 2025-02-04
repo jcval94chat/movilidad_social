@@ -3980,14 +3980,15 @@ def show_section4():
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, 
                                                                                 df_cluster_target, 
-                                                                                df_datos_valiosas)
+                                                                                df_datos_valiosas,
+                                                                                n_vecinos=50)
         
         df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster'] = pd.qcut(
             df_datos_descript_valiosas_respuestas['Soporte'],
             q=4, labels=False
         )
-        if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
-            df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
+        # if 'N_probabilidad' not in df_datos_descript_valiosas_respuestas.columns:
+        #     df_datos_descript_valiosas_respuestas['N_probabilidad'] = np.random.randint(1,5, size=len(df_datos_descript_valiosas_respuestas))
 
         # Filtrado por defecto: se conservan las filas con alguna medida de cambio y con nivel de confianza > 0.
         df_filtrado = df_datos_descript_valiosas_respuestas[
@@ -3995,7 +3996,11 @@ def show_section4():
              (df_datos_descript_valiosas_respuestas['cambio_yo_difícil']>0)|
              (df_datos_descript_valiosas_respuestas['cambio_yo_fácil']>0))&
             (df_datos_descript_valiosas_respuestas['nivel_de_confianza_cluster']>0)
-        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado','cambio_yo_difícil','cambio_yo_fácil','nivel_de_confianza_cluster']) else df_datos_descript_valiosas_respuestas
+        ] if all(x in df_datos_descript_valiosas_respuestas.columns for x in ['cambio_yo_moderado',
+                                                                              'cambio_yo_difícil',
+                                                                              'cambio_yo_fácil',
+                                                                              'nivel_de_confianza_cluster']) \
+                                                                                else df_datos_descript_valiosas_respuestas
 
         nuevo_diccionario = get_nuevo_diccionario()
 
