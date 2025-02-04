@@ -3680,10 +3680,25 @@ def show_section4():
     if 'df_clusterizados_total_origi' not in st.session_state:
         st.session_state['df_clusterizados_total_origi'] = pd.read_csv(base_path+'df_clusterizados_total_origi.csv')
 
-    st.write("Sección 4")
-
     TARGETS = list(st.session_state['df_valiosas_dict'].keys())
-    user_selected_target = st.selectbox("Target", TARGETS, index=0)
+
+    nombres_targets = {
+        'OBJ_pobre_a_rico': "De Pobre a Rico",
+        'OBJ_rico_a_pobre': "De Rico a Pobre",
+        'OBJ_siguie_siendo_rico': "Permanece Rico",
+        'OBJ_siguie_siendo_pobre': "Permanece Pobre",
+        'OBJ_sigue_siendo_clase_media': "Permanece Clase Media",
+        'OBJ_clase_media_a_rico': "De Clase Media a Rico",
+        'OBJ_clase_media_a_pobre': "De Clase Media a Pobre",
+        'OBJ_subieron': "Ascendieron",
+        'OBJ_bajaron': "Descendieron"
+    }
+
+    user_selected_target = st.selectbox("Target", list(nombres_targets.values), index=0)
+
+    nombres_targets_inver =  {v:k for k, v in nombres_targets.items()}
+
+    user_selected_target = nombres_targets_inver[user_selected_target]
 
     prefix = f"{user_selected_target}_"
     df_cluster = st.session_state['df_clusterizados_total_origi'].copy()
@@ -3695,16 +3710,14 @@ def show_section4():
 
     df_feature_import = st.session_state['df_feature_importances_total']
     best_val = [x.split('-')[0].strip() for x in df_feature_import[f"{user_selected_target}_importance"].sort_values(ascending=False).index][:10]
-    best_val = [x for x in best_val if x not in ['p133','CIUO2']]
+    best_val = [x for x in best_val if x not in ['p133','CIUO2','p23 ']]
 
-    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98','p151','p64']
+    base_pregs = ['p05','p86','p33_f','p43','p43m','p13','p98']#,'p151','p64']
     preguntas_lista = sorted(list(set(base_pregs+best_val)))
 
     # data_desc_global se obtiene de get_data_desc() y contiene la información completa de cada variable
     data_desc_global = get_data_desc()
     data_desc_usable = {k: data_desc_global[k] for k in preguntas_lista if k in data_desc_global}
-
-    st.write("Contesta el cuestionario:")
 
     # Se muestra el formulario con 3 preguntas por renglón, usando selectbox en lugar de checkboxes o radio.
     with st.form("cuestionario_form"):
