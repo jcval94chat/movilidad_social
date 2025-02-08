@@ -10,7 +10,7 @@ from sklearn.impute import SimpleImputer
 
 import uuid
 
-from .utils.diccionarios import get_nuevo_diccionario, get_data_desc
+from utils.diccionarios import get_nuevo_diccionario, get_data_desc
 
 # ================================
 # Funciones para preguntar en consola
