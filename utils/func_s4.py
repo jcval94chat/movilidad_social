@@ -5,7 +5,7 @@ def construir_descripciones_cluster(
     variables_cambio,
     data_desc,
     nuevo_diccionario,
-    language='es',          # 'es' para español, 'en' para inglés
+    language='es',
     show_N_probabilidad=True,
     show_Probabilidad=True
 ):

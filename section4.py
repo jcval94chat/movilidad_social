@@ -729,8 +729,8 @@ def show_section4():
         print(df_respuestas)
         ejecutar = st.form_submit_button("Ejecutar")
 
-    st.write("### Tu respuesta:")
-    st.write(df_respuestas)
+    # st.write("### Tu respuesta:")
+    # st.write(df_respuestas)
     if ejecutar:
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, 
