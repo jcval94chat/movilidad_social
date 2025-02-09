@@ -712,6 +712,7 @@ def show_section4():
 
     with st.form("cuestionario_form"):
         df_respuestas = cuestionario_general(data_desc_usable, cols_per_row=3)
+        print(df_respuestas)
         ejecutar = st.form_submit_button("Ejecutar")
 
     if ejecutar:

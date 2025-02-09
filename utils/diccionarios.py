@@ -1482,7 +1482,7 @@ def get_data_desc():
             ]
         },
         "p66": {
-            "Descripción": "¿Estuvo de acuerdo con esa decisión?",
+            "Descripción": "¿Estuvo de acuerdo con esa decisión? (Dejar de estudiar)",
             "Valores": [1, 2],
             "Etiquetas": ["Sí", "No"]
         },
