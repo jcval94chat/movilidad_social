@@ -714,7 +714,7 @@ def show_section4():
         df_respuestas = cuestionario_general(data_desc_usable, cols_per_row=3)
         print(df_respuestas)
         ejecutar = st.form_submit_button("Ejecutar")
-
+    st.write(df_respuestas)
     if ejecutar:
         df_datos_valiosas = st.session_state['df_valiosas_dict'][user_selected_target]
         df_datos_descript_valiosas_respuestas = obtener_vecinos_de_mi_respuesta(df_respuestas, 
