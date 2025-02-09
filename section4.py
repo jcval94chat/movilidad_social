@@ -381,18 +381,32 @@ def generar_lista_preguntas(data_desc):
             preguntas.append({'variable': var, 'descripcion': desc, 'tipo': 'numeric'})
     return preguntas
 
+# def preguntar_opciones_streamlit(i, variable, descripcion, opciones):
+#     import uuid
+#     key_uid = f"opt_{variable}_{i}_{uuid.uuid4()}"
+#     st.write(f"**{variable}**: {descripcion}")
+#     lista = [f"{k} - {v}" for k, v in opciones.items()]
+#     sel = st.selectbox("", lista, key=key_uid, label_visibility="collapsed")
+#     cod = int(sel.split(" - ")[0])
+#     return cod, opciones[cod]
+
 def preguntar_opciones_streamlit(i, variable, descripcion, opciones):
-    import uuid
-    key_uid = f"opt_{variable}_{i}_{uuid.uuid4()}"
+    key_uid = f"opt_{variable}_{i}"  # Clave determinística
     st.write(f"**{variable}**: {descripcion}")
     lista = [f"{k} - {v}" for k, v in opciones.items()]
     sel = st.selectbox("", lista, key=key_uid, label_visibility="collapsed")
     cod = int(sel.split(" - ")[0])
     return cod, opciones[cod]
 
+# def preguntar_numero_streamlit(i, variable, descripcion):
+#     import uuid
+#     key_uid = f"num_{variable}_{i}_{uuid.uuid4()}"
+#     st.write(f"**{variable}**: {descripcion}")
+#     val = st.number_input("", value=0.0, step=1.0, key=key_uid, label_visibility="collapsed")
+#     return val, str(val)
+
 def preguntar_numero_streamlit(i, variable, descripcion):
-    import uuid
-    key_uid = f"num_{variable}_{i}_{uuid.uuid4()}"
+    key_uid = f"num_{variable}_{i}"  # Clave determinística
     st.write(f"**{variable}**: {descripcion}")
     val = st.number_input("", value=0.0, step=1.0, key=key_uid, label_visibility="collapsed")
     return val, str(val)
