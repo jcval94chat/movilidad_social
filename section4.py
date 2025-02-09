@@ -89,8 +89,6 @@ def cuestionario_general(data_desc, front='console', st=None):
     df = respuestas_a_dataframe(respuestas)
     return df
 
-
-
 def obtener_vecinos_de_mi_respuesta(df_respuestas, df_datos_clusterizados_, 
                                     df_datos_descript_valiosas, n_vecinos=20):
     """
