@@ -99,11 +99,11 @@ def show_section1():
     with c1:
         st.markdown(
             """
-            <a href='https://www.youtube.com/@momentitocafecito' target='_blank'
+            <a href='https://github.com/jcval94chat/movilidad_social' target='_blank'
                style='text-decoration:none;'>
                 <img src='https://cdn-icons-png.flaticon.com/512/1384/1384060.png'
                      height='25' style='vertical-align:middle;' />
-                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+                <span style='font-size:14px; margin-left:6px;'>Repositorio</span>
             </a>
             """,
             unsafe_allow_html=True
@@ -111,11 +111,11 @@ def show_section1():
     with c2:
         st.markdown(
             """
-            <a href='https://instagram.com/momentitocafecito' target='_blank'
+            <a href='https://github.com/jcval94chat/movilidad_social' target='_blank'
                style='text-decoration:none;'>
                 <img src='https://cdn-icons-png.flaticon.com/512/1384/1384063.png'
                      height='25' style='vertical-align:middle;' />
-                <span style='font-size:14px; margin-left:6px;'>Momentito Cafecito</span>
+                <span style='font-size:14px; margin-left:6px;'>Repositorio</span>
             </a>
             """,
             unsafe_allow_html=True
